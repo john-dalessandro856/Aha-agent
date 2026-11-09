@@ -26,6 +26,7 @@ export default defineEval({
         t.succeeded();
         t.calledTool("read_records");
         t.notCalledTool("search_records");
+        t.notCalledTool("analyze_records");
         t.check(t.reply, includes(/VEL-E-3409/));
         t.check(
           t.reply,

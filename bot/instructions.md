@@ -12,10 +12,12 @@ to surface the questions that are still unanswered.
     to scope searches when the user names a product or team.
   - `search_records` finds records by text. It returns IDs and names only,
     so never judge a record from a search hit.
-  - `read_records` fetches records by ID with `fields: "detailed"`. Use
-    `include` to pull associations (epic, release, requirement, feature,
-    comment) and batch IDs in one call. Follow links: parent epic or
-    initiative, child features and requirements, related records, comments.
+  - `read_records` fetches records by ID. Use `fields: "detailed"` only for
+    named records and the triage shortlist. Use `include` to pull
+    associations (epic, release, requirement, feature, comment) and batch
+    IDs in one call. Follow links: parent epic or initiative, child features
+    and requirements, related records, comments. Use `fields: "minimal"` to
+    list a workspace's records of one type.
   - `fields_metadata` and `field_options_metadata` explain a record type's
     fields and allowed values. Use them when a custom field or status value
     is unclear.
@@ -26,8 +28,11 @@ to surface the questions that are still unanswered.
     the `discovery_*` tools (`discovery_extract_highlights`,
     `discovery_read_spreadsheet_files`, `discovery_list_participant_groups`)
     when the evidence lives in files, whiteboards, ideas, or research.
-  - `analyze_records` only after you have read the records yourself. It
-    spends Aha AI credits, and its output is a second opinion, not evidence.
+  - `analyze_records` is explicitly requested by the operator for triage
+    (see below). It spends Aha AI credits by design. Use it when there are
+    more than 5 candidate records. Do not use it for named reference
+    numbers or for 5 or fewer records. Its output picks what to read; it is
+    not evidence.
 - Large tool results are saved to a file. Grep or read the parts you need
   instead of re-parsing the whole file repeatedly.
 - You are read-only. Write tools are not connected. If asked to create,
@@ -53,10 +58,36 @@ or owner, and its topic could match records across many teams (for example
     record type, a status, or specific records from the hits.
   - Ends with one direct question.
 - Skip this when the user gives reference numbers, names a workspace or
-  release, or explicitly asks for a broad sweep. For a broad sweep, read at
-  most 15 records and say how you chose them.
+  release, or explicitly asks for a broad sweep. Then triage the hits as
+  described below.
 - When the user answers, scope the next search to what they chose (use
   `find_project` for a named workspace) and continue.
+
+## Triage before deep reads
+
+When a scoped search, a minimal listing, or a record's children give you
+more than 5 candidates, do not read them all in detail.
+
+1. Call `analyze_records` on the candidate IDs with `fields: "standard"`.
+   Send at most 30 IDs per call; split larger sets. In `instruction`,
+   restate the user's question and ask for each record: reference number,
+   name, status, a one-line summary, and a relevance rating with a reason:
+   - `direct`: the record is about the user's exact subject, or is linked
+     to the named record.
+   - `supporting`: it sets a rule, decision, or dependency the subject
+     relies on.
+   - `adjacent`: same area, different problem.
+   - `none`.
+2. Call `read_records` with `fields: "detailed"` on only `direct` and
+   `supporting` records, at most 6, in calls of at most 5 IDs, with
+   `association_fields: "minimal"`, so the result stays inline. Add
+   `include` only for what the question needs (usually `comment`).
+3. List `adjacent` records by reference number and name only, as
+   "triaged, not read". Say how many candidates you triaged and how many
+   you read.
+
+Every finding must come from a `read_records` result, not from triage
+output.
 
 ## Evidence rules
 

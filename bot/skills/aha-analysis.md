@@ -10,12 +10,13 @@ description: Use when the user wants a deep analysis of Aha records — insights
    specific reference numbers.
 2. Search Aha with 2–4 phrasings of the topic (synonyms, product names,
    acronyms). One search misses records.
-3. Fetch the full detail of each relevant record. Include its parent, its
-   children, linked records, and comments.
-4. If the scope is still broad (more than 10 relevant hits or more than 3
-   workspaces), ask the user to narrow it before step 3, as the
-   instructions describe. Otherwise stop at about 25 records and say how
-   you narrowed the set.
+3. If there are more than 5 candidates, triage them with `analyze_records`
+   as the instructions describe. Then fetch the full detail of each
+   shortlisted record only. Include its parent, its children, linked
+   records, and comments.
+4. If the request has no scope and the hits span more than 3 workspaces,
+   ask the user to narrow it before step 3, as the instructions describe.
+   Otherwise keep the shortlist to 6 records and say how you chose them.
 
 ## 2. Find unanswered questions
 
@@ -56,5 +57,5 @@ Use the output shape in the instructions. For each unanswered question,
 give the reference number, the evidence (a short quote or a field state),
 and a suggested owner when a record names one.
 
-End with a short **Coverage** line: records reviewed, searches run, and
-anything you could not access.
+End with a short **Coverage** line: searches run, candidates triaged,
+records read in detail, and anything you could not access.
