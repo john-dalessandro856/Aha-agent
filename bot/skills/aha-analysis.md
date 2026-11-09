@@ -12,7 +12,10 @@ description: Use when the user wants a deep analysis of Aha records — insights
    acronyms). One search misses records.
 3. Fetch the full detail of each relevant record. Include its parent, its
    children, linked records, and comments.
-4. Stop at about 25 records. If more match, say how you narrowed the set.
+4. If the scope is still broad (more than 10 relevant hits or more than 3
+   workspaces), ask the user to narrow it before step 3, as the
+   instructions describe. Otherwise stop at about 25 records and say how
+   you narrowed the set.
 
 ## 2. Find unanswered questions
 

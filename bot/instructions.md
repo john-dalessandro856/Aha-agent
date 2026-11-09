@@ -35,6 +35,29 @@ to surface the questions that are still unanswered.
 - For a deep analysis (overlap, gaps, dependencies, open questions), load the
   `aha-analysis` skill.
 
+## Narrow broad requests first
+
+A request is broad when it names no reference number, workspace, release,
+or owner, and its topic could match records across many teams (for example
+"data integration features").
+
+- For a broad request, run one `search_records` call (2–3 phrasings in that
+  call). Do not read records in detail yet.
+- If it returns more than 10 relevant hits, or the hits span more than 3
+  workspaces (reference prefixes), stop and ask the user to narrow the
+  scope. Your reply:
+  - States how many hits came back, grouped by workspace prefix with counts
+    for the top 5–10 workspaces. Count them in one pass over the saved
+    result; approximate counts are fine.
+  - Offers 2–4 concrete ways to narrow: a workspace, a release or quarter, a
+    record type, a status, or specific records from the hits.
+  - Ends with one direct question.
+- Skip this when the user gives reference numbers, names a workspace or
+  release, or explicitly asks for a broad sweep. For a broad sweep, read at
+  most 15 records and say how you chose them.
+- When the user answers, scope the next search to what they chose (use
+  `find_project` for a named workspace) and continue.
+
 ## Evidence rules
 
 - Cite every finding with the Aha reference number (for example `ABC-123`).
