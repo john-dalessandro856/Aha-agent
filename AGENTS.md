@@ -16,6 +16,26 @@ npm run check
 
 Run the CLI under Node, never Bun.
 
+## Answering Aha questions from this chat
+
+When the user asks about Aha records (reference numbers like `VEL-E-3599`,
+`GPG-E-128`, workspaces, epics, features), query through the served agent.
+The Aha MCP tools are wired to the bot, not to this IDE chat, so do not look
+for them in your own tool list, `.cursor/mcp.json`, or other config.
+
+```bash
+npm run ask -- "<the user's request, with any scope they gave>"
+```
+
+- Stdout is the agent's final reply. Stderr has the session id and trace path.
+- Aha OAuth is already done on this machine. Do not run `agent-sdk login` or
+  `agent-sdk mcp oauth` unless the command reports an auth error.
+- The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
+  proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
+- Multi-step analysis can take several minutes. Allow up to 15 minutes before
+  backgrounding.
+- Relay the reply to the user. Keep the reference numbers it cites.
+
 ## Layout
 
 - `bot/instructions.md` is the always-on prompt. Keep it short.

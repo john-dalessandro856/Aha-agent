@@ -5,7 +5,8 @@
   "description": "agent project: Aha-agent",
   "scripts": {
     "check": "tsc --noEmit",
-    "dev": "agent-sdk dev"
+    "dev": "agent-sdk dev",
+    "ask": "node scripts/ask.mjs"
   },
   "dependencies": {
     "@grok/agent-sdk": "^0.6.0",
