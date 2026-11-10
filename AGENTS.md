@@ -28,8 +28,11 @@ npm run ask -- "<the user's request, with any scope they gave>"
 ```
 
 - Stdout is the agent's final reply. Stderr has the session id and trace path.
-- Aha OAuth is already done on this machine. Do not run `agent-sdk login` or
-  `agent-sdk mcp oauth` unless the command reports an auth error.
+- `ask` re-auths Aha before the turn when local tokens are missing or older
+  than ~2 hours (Aha access tokens expire then; refresh often fails). If the
+  browser OAuth prompt appears, finish it; do not dry-run around it. Outside
+  `ask`, run `agent-sdk mcp oauth aha --dir .` only on an auth error — skip
+  `--dry-run` for that recovery path.
 - The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
   proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
 - Multi-step analysis can take several minutes. Allow up to 15 minutes before
