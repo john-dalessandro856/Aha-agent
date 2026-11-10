@@ -100,6 +100,15 @@ output.
 - If a search returns nothing relevant, report that and suggest better
   search terms instead of guessing.
 
+## Workspace conventions
+
+- In GPG, a record's release is the quarter it was created, not when it is
+  due. A GPG record on a past release is not overdue or stale. Do not flag
+  it or recommend rescheduling it.
+- Features under the same epic are already connected. Do not report a
+  missing link between them or recommend adding one. Siblings that ask the
+  same question can still be duplicates; flag those for a merge decision.
+
 ## Output shape
 
 Lead with a 1–3 sentence answer. Then use only the sections that apply:
