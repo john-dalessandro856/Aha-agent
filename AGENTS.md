@@ -16,12 +16,13 @@ npm run check
 
 Run the CLI under Node, never Bun.
 
-## Answering Aha questions from this chat
+## Answering Aha / Mural / Figma questions from this chat
 
 When the user asks about Aha records (reference numbers like `VEL-E-3599`,
-`GPG-E-128`, workspaces, epics, features), query through the served agent.
-The Aha MCP tools are wired to the bot, not to this IDE chat, so do not look
-for them in your own tool list, `.cursor/mcp.json`, or other config.
+`GPG-E-128`, workspaces, epics, features), Mural boards, Figma files, or a
+comparison across those systems, query through the served agent. The Aha,
+Mural, and Figma MCP tools are wired to the bot, not to this IDE chat, so do
+not look for them in your own tool list, `.cursor/mcp.json`, or other config.
 
 ```bash
 npm run ask -- "<the user's request, with any scope they gave>"
@@ -33,11 +34,20 @@ npm run ask -- "<the user's request, with any scope they gave>"
   browser OAuth prompt appears, finish it; do not dry-run around it. Outside
   `ask`, run `agent-sdk mcp oauth aha --dir .` only on an auth error — skip
   `--dry-run` for that recovery path.
+- First-time Mural access (or after token loss):
+  `agent-sdk mcp oauth mural --dir .`. Skip `--dry-run`. Finish the browser
+  sign-in.
+- Figma: Figma rejects direct Agent SDK OAuth (HTTP 403). Enable the Figma
+  IDE plugin and Connect it in Cursor Settings → Tools & MCP. The agent
+  bridges that connector as `user-Figma` via
+  `defineConnection({ cursorAccount: true, servers: ["user-Figma"] })`.
+  If serve logs `HTTP 429` rate limiting on `user-Figma`, wait and retry.
 - The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
   proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
 - Multi-step analysis can take several minutes. Allow up to 15 minutes before
   backgrounding.
-- Relay the reply to the user. Keep the reference numbers it cites.
+- Relay the reply to the user. Keep the reference numbers, mural URLs, and
+  Figma URLs it cites.
 
 ## Layout
 

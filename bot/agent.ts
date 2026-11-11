@@ -9,6 +9,13 @@ export default defineAgent({
     ],
   },
   hosting: {
-    egressDomains: ["bayer.aha.io"],
+    egressDomains: [
+      "bayer.aha.io",
+      "mcp-canvas.mural.co",
+      "app.mural.co",
+      "mcp.figma.com",
+      "www.figma.com",
+      "api.figma.com",
+    ],
   },
 });
