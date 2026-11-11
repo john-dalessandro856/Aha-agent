@@ -41,6 +41,10 @@ npm run ask -- "<the user's request, with any scope they gave>"
   or `.env.local` before `ask` / `serve`. Create the token in DPJ → Avatar →
   Account settings → Access tokens → API. The Bayer `openproject` Cursor
   plugin uses the same key for IDE-side MCP.
+- DPJ writes from this chat (create, update, relate, comment, close): the
+  DPJ MCP is read-only, so use the `dpj-write-records` skill
+  (`.cursor/skills/dpj-write-records/`). It writes through the REST API and
+  dry-runs until `--apply`.
 - First-time Mural access (or after token loss):
   `agent-sdk mcp oauth mural --dir .`. Skip `--dry-run`. Finish the browser
   sign-in.
