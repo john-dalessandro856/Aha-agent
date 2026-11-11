@@ -16,13 +16,15 @@ npm run check
 
 Run the CLI under Node, never Bun.
 
-## Answering Aha / Mural / Figma questions from this chat
+## Answering Aha / DPJ / Mural / Figma questions from this chat
 
 When the user asks about Aha records (reference numbers like `VEL-E-3599`,
-`GPG-E-128`, workspaces, epics, features), Mural boards, Figma files, or a
-comparison across those systems, query through the served agent. The Aha,
-Mural, and Figma MCP tools are wired to the bot, not to this IDE chat, so do
-not look for them in your own tool list, `.cursor/mcp.json`, or other config.
+`GPG-E-128`, workspaces, epics, features), DPJ / OpenProject work packages
+(numeric or display IDs on `dpj.int.bayer.com`), Mural boards, Figma files,
+or a comparison across those systems, query through the served agent. The
+Aha, DPJ, Mural, and Figma MCP tools are wired to the bot, not to this IDE
+chat, so do not look for them in your own tool list, `.cursor/mcp.json`, or
+other config.
 
 ```bash
 npm run ask -- "<the user's request, with any scope they gave>"
@@ -34,6 +36,11 @@ npm run ask -- "<the user's request, with any scope they gave>"
   browser OAuth prompt appears, finish it; do not dry-run around it. Outside
   `ask`, run `agent-sdk mcp oauth aha --dir .` only on an auth error — skip
   `--dry-run` for that recovery path.
+- DPJ uses a personal API token, not OAuth. Set `OPENPROJECT_API_KEY` (and
+  optionally `OPENPROJECT_URL=https://dpj.int.bayer.com`) in the environment
+  or `.env.local` before `ask` / `serve`. Create the token in DPJ → Avatar →
+  Account settings → Access tokens → API. The Bayer `openproject` Cursor
+  plugin uses the same key for IDE-side MCP.
 - First-time Mural access (or after token loss):
   `agent-sdk mcp oauth mural --dir .`. Skip `--dry-run`. Finish the browser
   sign-in.
@@ -46,8 +53,8 @@ npm run ask -- "<the user's request, with any scope they gave>"
   proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
 - Multi-step analysis can take several minutes. Allow up to 15 minutes before
   backgrounding.
-- Relay the reply to the user. Keep the reference numbers, mural URLs, and
-  Figma URLs it cites.
+- Relay the reply to the user. Keep the Aha references, DPJ work package IDs,
+  mural URLs, and Figma URLs it cites.
 
 ## Layout
 

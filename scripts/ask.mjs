@@ -18,7 +18,7 @@ const ACCESS_TTL_MS = 2 * 60 * 60 * 1000;
 const ACCESS_TTL_SKEW_MS = 5 * 60 * 1000;
 
 if (messages.length === 0) {
-  console.error('Usage: npm run ask -- "your question about Aha records"');
+  console.error('Usage: npm run ask -- "your question about Aha or DPJ records"');
   process.exit(2);
 }
 

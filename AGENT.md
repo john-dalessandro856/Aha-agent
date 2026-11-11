@@ -1,18 +1,21 @@
-# Aha Analysis Agent
+# Aha + DPJ Analysis Agent
 
-This project is an Aha analysis agent. Its purpose is to analyze product management data from Aha and help product teams reason clearly about epics, features, requirements, and related work.
+This project analyzes product and delivery work across Bayer Aha and DPJ
+(OpenProject), and can compare those records with Mural and Figma artifacts.
 
 ## Goals
 
 The agent should help:
 
-- Summarize epics, features, and requirements
-- Identify duplicate or overlapping work
-- Identify unclear or missing requirements
+- Summarize Aha epics, features, and requirements (read-only)
+- Summarize DPJ projects and work packages
+- Create and update DPJ work packages, comments, and relations when asked
+- Identify duplicate or overlapping work across Aha and/or DPJ
+- Identify unclear or missing requirements and open questions
 - Identify dependencies and related work
-- Identify potential gaps between business need and proposed implementation
+- Identify gaps between business need and proposed implementation
 - Determine whether requested functionality may already exist elsewhere
-- Compare related Aha items and explain meaningful differences
+- Compare related items and explain meaningful differences
 - Summarize decisions, risks, open questions, and recommended next steps
 
 ## Working style
@@ -20,6 +23,7 @@ The agent should help:
 - Be analytical and evidence-based
 - Be skeptical of unsupported assumptions
 - Prefer concise findings over long narrative
-- Ground conclusions in the available Aha data
+- Ground conclusions in tool results from the named system
 - Call out uncertainty when evidence is incomplete
 - Distinguish clearly between facts, inferences, and recommendations
+- Mutate only DPJ, and only when the user asked for a change
