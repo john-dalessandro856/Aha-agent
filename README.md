@@ -7,13 +7,19 @@ asked.
 ## Local setup
 
 1. `npm install`
-2. Aha: complete `agent-sdk mcp oauth aha --dir .` (or use `npm run ask -- --sources aha`,
-   which re-auths Aha when those tokens are stale). Leave `AGENT_SOURCES` unset
-   for that manual command. Aha is the only system with its own sign-in.
-3. DPJ, Mural, and Figma: connect the plugins in Cursor Settings → Tools & MCP.
-   The agent uses those same Cursor account connectors (`user-Dpj-openproject`,
-   `user-Mural`, `user-Figma`), so there is no API key or extra OAuth. DPJ is
-   read-only through that connector.
+2. Install the DPJ, Mural, and Figma plugins in Cursor. The agent uses the
+   Cursor account connectors behind them (`user-Dpj-openproject`,
+   `user-Mural`, `user-Figma`). DPJ is read-only through that connector.
+
+There is no separate sign-in step. When a question needs a source whose
+sign-in no longer works, `ask` opens that source's sign-in page in your
+browser and continues once you finish. Working sign-ins are reused
+silently.
+
+```bash
+npm run connect -- --status   # report all four sign-ins, open nothing
+npm run connect -- mural      # sign one source in now
+```
 
 `ask` opens only the systems you name. Mural and Figma stay closed unless
 the question mentions them.

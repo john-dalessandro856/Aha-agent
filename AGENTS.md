@@ -41,29 +41,33 @@ IDE's sign-in:
 
 | Source | Agent connection | Auth |
 | --- | --- | --- |
-| Aha | `bayer.aha.io` MCP | Host OAuth (`agent-sdk mcp oauth aha`) |
+| Aha | `bayer.aha.io` MCP | Host OAuth |
 | DPJ | `user-Dpj-openproject` | Cursor account, read-only |
 | Mural | `user-Mural` | Cursor account |
 | Figma | `user-Figma` | Cursor account |
 
-- Stdout is the agent's final reply. Stderr has the sources, session id, and
-  trace path.
-- `ask` re-auths Aha only when Aha is selected and local tokens are missing
-  or older than ~2 hours (Aha access tokens expire then; refresh often
-  fails). If the browser OAuth prompt appears, finish it; do not dry-run
-  around it. Outside `ask`, run `agent-sdk mcp oauth aha` only after an Aha
-  auth error — skip `--dry-run`. Run that command with `AGENT_SOURCES`
-  unset.
-- Never run `agent-sdk mcp oauth` for DPJ, Mural, or Figma. When serve shows
-  one of their connectors as "Connect" or failing, connect it in Cursor
-  Settings → Tools & MCP or https://cursor.com/dashboard/integrations.
+Sign-in is automatic and only for the sources a question selects
+(`scripts/lib/connectors.mjs`). Before the turn, `ask` checks each selected
+source with no model tokens. A working or refreshable sign-in passes
+silently. A source that needs authorization opens its real sign-in page in
+the browser, and `ask` waits for it, then runs the question. If a turn still
+stops on authorization, `ask` signs that source in and retries once.
+
+- Stdout is the agent's final reply. Stderr has the sources, sign-in
+  status, session id, and trace path.
+- When a sign-in page opens, tell the user to finish it in the browser. Do
+  not dry-run around it.
+- `npm run connect -- --status` reports all four sign-ins without opening
+  anything. `npm run connect -- <source>` signs one in on its own.
+- Do not run `agent-sdk mcp oauth` for DPJ, Mural, or Figma, and do not send
+  the user to the dashboard for them. `npm run connect` mints the real
+  sign-in page.
 - The agent cannot write to DPJ. DPJ writes go through the
   `dpj-write-records` skill in this chat.
 - If serve logs `HTTP 429` on `user-Figma`, Figma is rate limiting the
   account. Wait and retry.
 - The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
-  proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`). Put the same flag
-  on a manual `mcp oauth` command.
+  proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
 - Multi-step analysis can take several minutes. Allow up to 15 minutes
   before backgrounding.
 - Relay the reply to the user. Keep the Aha references, DPJ work package

@@ -6,7 +6,8 @@
   "scripts": {
     "check": "tsc --noEmit",
     "dev": "agent-sdk dev",
-    "ask": "node scripts/ask.mjs"
+    "ask": "node scripts/ask.mjs",
+    "connect": "node scripts/connect.mjs"
   },
   "dependencies": {
     "@grok/agent-sdk": "^0.6.0",
