@@ -1,8 +1,16 @@
 import { defineConnection } from "@grok/agent-sdk/connections";
+import { inactiveSource } from "../lib/inactive-source";
+import { sourceMode } from "../lib/sources";
 
-export default defineConnection({
-  url: "https://bayer.aha.io/api/v1/mcp",
-  oauth: true,
-  advertiseTools: true,
-  effects: "read",
-});
+const mode = sourceMode("aha");
+
+export default mode.active
+  ? defineConnection({
+      description: "Aha (bayer.aha.io), read-only.",
+      url: "https://bayer.aha.io/api/v1/mcp",
+      oauth: true,
+      advertiseTools: true,
+      optional: mode.optional,
+      effects: "read",
+    })
+  : inactiveSource("aha");

@@ -18,47 +18,50 @@ Run the CLI under Node, never Bun.
 
 ## Answering Aha / DPJ / Mural / Figma questions from this chat
 
-When the user asks about Aha records (reference numbers like `VEL-E-3599`,
-`GPG-E-128`, workspaces, epics, features), DPJ / OpenProject work packages
-(numeric or display IDs on `dpj.int.bayer.com`), Mural boards, Figma files,
-or a comparison across those systems, query through the served agent. The
-Aha, DPJ, Mural, and Figma MCP tools are wired to the bot, not to this IDE
-chat, so do not look for them in your own tool list, `.cursor/mcp.json`, or
-other config.
+Call only the systems the question names. Aha, DPJ, Mural, and Figma are
+independent. Do not authorize or query one to unblock another. An empty
+`ask` is not a reason to run Mural OAuth.
 
-```bash
-npm run ask -- "<the user's request, with any scope they gave>"
-```
+| Question needs | Call |
+| --- | --- |
+| Aha records (`VEL-E-3599`, workspaces, epics, features) | `npm run ask -- --sources aha "<question>"` |
+| DPJ / OpenProject reads | The IDE OpenProject plugin in this chat. Do not start `ask` for a read. |
+| DPJ writes (create, update, relate, comment, close) | The `dpj-write-records` skill (`.cursor/skills/dpj-write-records/`). Dry-run until `--apply`. |
+| Mural only | The IDE Mural plugin in this chat. |
+| Figma only | The IDE Figma plugin in this chat. Do not run `agent-sdk mcp oauth` for Figma. |
+| A comparison that includes Aha | `npm run ask -- --sources aha,dpj` (add `mural` or `figma` only when that comparison includes them) |
 
-- Stdout is the agent's final reply. Stderr has the session id and trace path.
-- `ask` re-auths Aha before the turn when local tokens are missing or older
-  than ~2 hours (Aha access tokens expire then; refresh often fails). If the
-  browser OAuth prompt appears, finish it; do not dry-run around it. Outside
-  `ask`, run `agent-sdk mcp oauth aha --dir .` only on an auth error — skip
-  `--dry-run` for that recovery path.
+`ask` sets `AGENT_SOURCES` for that process. Connections left out are not
+opened, so a missing Mural sign-in does not abort an Aha turn. Omit
+`--sources` and the script infers them from the question; Mural and Figma
+are included only when the question names them. With no signal it uses Aha
+only.
+
+- Stdout is the agent's final reply. Stderr has the sources, session id, and
+  trace path.
+- `ask` re-auths Aha only when Aha is selected and local tokens are missing
+  or older than ~2 hours (Aha access tokens expire then; refresh often
+  fails). It re-auths Mural only when Mural is selected and no local Mural
+  token exists. If the browser OAuth prompt appears, finish it; do not
+  dry-run around it. Outside `ask`, run `agent-sdk mcp oauth <aha|mural>`
+  only after that source's own auth error — skip `--dry-run`. Run that
+  command with `AGENT_SOURCES` unset.
 - DPJ uses a personal API token, not OAuth. Set `OPENPROJECT_API_KEY` (and
   optionally `OPENPROJECT_URL=https://dpj.int.bayer.com`) in the environment
-  or `.env.local` before `ask` / `serve`. Create the token in DPJ → Avatar →
-  Account settings → Access tokens → API. The Bayer `openproject` Cursor
-  plugin uses the same key for IDE-side MCP.
-- DPJ writes from this chat (create, update, relate, comment, close): the
-  DPJ MCP is read-only, so use the `dpj-write-records` skill
-  (`.cursor/skills/dpj-write-records/`). It writes through the REST API and
-  dry-runs until `--apply`.
-- First-time Mural access (or after token loss):
-  `agent-sdk mcp oauth mural --dir .`. Skip `--dry-run`. Finish the browser
-  sign-in.
-- Figma: Figma rejects direct Agent SDK OAuth (HTTP 403). Enable the Figma
-  IDE plugin and Connect it in Cursor Settings → Tools & MCP. The agent
-  bridges that connector as `user-Figma` via
-  `defineConnection({ cursorAccount: true, servers: ["user-Figma"] })`.
-  If serve logs `HTTP 429` rate limiting on `user-Figma`, wait and retry.
+  or `.env.local` before a DPJ `ask` / `serve`. Create the token in DPJ →
+  Avatar → Account settings → Access tokens → API. The Bayer `openproject`
+  Cursor plugin uses the same key.
+- Figma rejects direct Agent SDK OAuth (HTTP 403). Enable the Figma IDE
+  plugin and Connect it in Cursor Settings → Tools & MCP. The agent bridges
+  that connector as `user-Figma` only on turns that select Figma. If serve
+  logs `HTTP 429` on `user-Figma`, wait and retry.
 - The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
-  proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
-- Multi-step analysis can take several minutes. Allow up to 15 minutes before
-  backgrounding.
-- Relay the reply to the user. Keep the Aha references, DPJ work package IDs,
-  mural URLs, and Figma URLs it cites.
+  proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`). Put the same flag
+  on a manual `mcp oauth` command.
+- Multi-step analysis can take several minutes. Allow up to 15 minutes
+  before backgrounding.
+- Relay the reply to the user. Keep the Aha references, DPJ work package
+  IDs, mural URLs, and Figma URLs it cites.
 
 ## Layout
 
