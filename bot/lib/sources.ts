@@ -6,8 +6,9 @@
 // missing token cannot abort an Aha turn.
 //
 // A name left out of AGENT_SOURCES is not advertised and does not open
-// that server. `mcp oauth <name>` must run with AGENT_SOURCES unset so
-// the connection file still exports the real server.
+// that server. `mcp oauth aha` must run with AGENT_SOURCES unset so the
+// connection file still exports the real server. DPJ, Mural, and Figma
+// use Cursor account connectors and have no host OAuth.
 
 export const SOURCE_NAMES = ["aha", "dpj", "mural", "figma"] as const;
 

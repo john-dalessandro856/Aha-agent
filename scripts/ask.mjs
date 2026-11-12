@@ -4,9 +4,10 @@
 //
 // Each name is an independent MCP connection. This script sets AGENT_SOURCES
 // so the process does not open, or request OAuth for, a system the question
-// did not select. Aha access tokens last ~2h; refresh often fails, so
-// re-auth Aha before the turn only when Aha is selected and the last
-// successful OAuth is older than that.
+// did not select. Aha is the only host OAuth connection: its access tokens
+// last ~2h and refresh often fails, so re-auth Aha before the turn only when
+// Aha is selected and the last successful OAuth is older than that. DPJ,
+// Mural, and Figma ride Cursor account connectors (the IDE's sign-in).
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -16,7 +17,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = join(root, "node_modules", "@grok", "agent-sdk", "dist", "bin", "agent-serve.js");
 const SOURCE_NAMES = ["aha", "dpj", "mural", "figma"];
-const OAUTH_SOURCES = new Set(["aha", "mural"]);
+const OAUTH_SOURCES = new Set(["aha"]);
 
 /** Aha MCP access tokens advertise expires_in=7200. Re-auth a few minutes early. */
 const ACCESS_TTL_MS = 2 * 60 * 60 * 1000;
@@ -170,14 +171,12 @@ function runCli(args, { inherit = false, sources } = {}) {
   });
 }
 
+const ACCOUNT_CONNECTORS = { dpj: "user-Dpj-openproject", mural: "user-Mural", figma: "user-Figma" };
+
 function nonOauthHint(source) {
-  if (source === "figma") {
-    return "Figma uses the IDE connector, not agent-sdk OAuth (direct OAuth returns HTTP 403). Connect Figma in Cursor Settings → Tools & MCP.";
-  }
-  if (source === "dpj") {
-    return "DPJ uses OPENPROJECT_API_KEY in the environment or .env.local, not OAuth.";
-  }
-  return `${source} is not an OAuth connection.`;
+  const connector = ACCOUNT_CONNECTORS[source];
+  if (connector === undefined) return `${source} is not an OAuth connection.`;
+  return `${source} uses the Cursor account connector ${connector}, not agent-sdk OAuth. Connect it in Cursor Settings → Tools & MCP (or https://cursor.com/dashboard/integrations).`;
 }
 
 async function ensureOauth(source, reason) {
@@ -245,9 +244,6 @@ async function preflight(sources) {
       const hours = (age / 3_600_000).toFixed(1);
       await ensureOauth("aha", `last auth was ~${hours}h ago (Aha access tokens last ~2h)`);
     }
-  }
-  if (sources.includes("mural") && !hasTokens("mural")) {
-    await ensureOauth("mural", "no local Mural tokens found");
   }
 }
 

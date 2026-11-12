@@ -15,24 +15,20 @@ for every claim. Do not invent work package IDs, subjects, or statuses.
    team. Resolve types and statuses with `list_types` / `list_statuses` when
    those names matter to the question.
 3. Search with `search_work_packages` using 2–4 phrasings (synonyms, product
-   names, acronyms). One search misses records. Compact search hits are IDs
-   and titles only — never judge a package from a search hit alone.
-4. When there are more than 5 candidates, triage from the compact list first
-   (subject, type, status, assignee, dates). Then fetch expanded detail, or
-   follow the work package resource / relations / comments tools, for at most
-   6 shortlisted packages. List the rest as "triaged, not read".
+   names, acronyms). One search misses records.
+4. When there are more than 5 candidates, triage from the result list first
+   (subject, type, status, assignee, dates). Then search by ID for at most 6
+   shortlisted packages. List the rest as "triaged, not read".
 5. If the request has no scope and hits span many projects, ask the user to
    narrow (project, version, type, assignee, or specific IDs) before deep
    reads.
 
 ## 2. Follow links
 
-For each shortlisted package, pull what the question needs:
-
-- Parent / children and relations (`list_work_package_relations`)
-- Comments (`list_work_package_comments`)
-- Version, assignee, priority, custom fields (`search_custom_fields` /
-  `search_custom_field_items` when a custom value is unclear)
+For each shortlisted package, use the fields `search_work_packages` returns:
+parent, version, assignee, priority, and status. Resolve a version with
+`search_versions` and a person with `search_users`. The DPJ tools do not
+return comments or relations; say so when the question needs them.
 
 ## 3. Find unanswered questions
 

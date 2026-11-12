@@ -4,17 +4,14 @@ import { sourceMode } from "../lib/sources";
 
 const mode = sourceMode("dpj");
 
-// Bayer DPJ (OpenProject). Auth is a personal API token with MCP scope —
-// same value as OPENPROJECT_API_KEY used by the Bayer openproject plugin.
-// Do not set effects: "read"; create/update tools must stay available.
+// Bayer DPJ (OpenProject) through the Cursor account connector that backs
+// the IDE plugin (Cursor Settings → Tools & MCP). Same sign-in as the IDE;
+// no OPENPROJECT_API_KEY on this host. The connector is read-only.
 export default mode.active
   ? defineConnection({
-      description: "DPJ (OpenProject) at dpj.int.bayer.com.",
-      url: "https://dpj.int.bayer.com/mcp",
-      headers: {
-        Authorization: "Bearer ${OPENPROJECT_API_KEY}",
-        Accept: "application/json, text/event-stream",
-      },
+      description: "DPJ (OpenProject) via the Cursor account connector, read-only.",
+      cursorAccount: true,
+      servers: ["user-Dpj-openproject"],
       advertiseTools: true,
       optional: mode.optional,
     })
