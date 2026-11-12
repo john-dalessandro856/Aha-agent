@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-// Usage: npm run ask -- [--sources aha,dpj,mural,figma] "question" ["follow-up" ...]
+// Usage: npm run ask -- [--sources aha,dpj,mural] "question" ["follow-up" ...]
 // Runs one local agent session and prints only the final reply.
 //
 // Each name is an independent MCP connection. This script sets AGENT_SOURCES
 // so the process opens only the systems the question selected. Before the
 // turn it checks just those sign-ins, silently; a browser sign-in page opens
 // only for a source whose sign-in no longer works (scripts/lib/connectors.mjs).
+// Figma is IDE plugin only — never an ask source.
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createConnectors, SOURCE_NAMES } from "./lib/connectors.mjs";
@@ -24,8 +25,8 @@ const connectors = createConnectors({ root, env });
 
 function usage() {
   console.error(
-    'Usage: npm run ask -- [--sources aha,dpj,mural,figma] "your question"\n' +
-      "Omit --sources to infer them from the question. Mural and Figma are not inferred unless named.",
+    'Usage: npm run ask -- [--sources aha,dpj,mural] "your question"\n' +
+      "Omit --sources to infer them from the question. Mural is not inferred unless named. Figma uses the IDE plugin, not ask.",
   );
 }
 
@@ -85,7 +86,6 @@ function inferSources(text) {
     if (!selected.includes(name)) selected.push(name);
   };
   if (/\bmural\b|mural\.co/i.test(text)) add("mural");
-  if (/\bfigma\b|figma\.com/i.test(text)) add("figma");
   if (/\bdpj\b|\bopenproject\b|work package/i.test(text)) add("dpj");
   if (/\baha\b|bayer\.aha\.io|\b[A-Z]{2,12}-[A-Z]+-\d+\b/.test(text)) add("aha");
   if (selected.length === 0) add("aha");

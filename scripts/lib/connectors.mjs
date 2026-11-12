@@ -1,13 +1,14 @@
-// Sign-in for the agent's four sources, done only for the sources a turn
+// Sign-in for the agent's sources, done only for the sources a turn
 // selected and only when the existing sign-in no longer works.
 //
 // - Aha is host OAuth. A zero-token tool listing lets the SDK reuse or
 //   refresh the saved token silently. Only when that fails does the browser
 //   open (`agent-sdk mcp oauth aha`).
-// - DPJ, Mural, and Figma are Cursor account connectors. A status read
-//   checks them silently. Only a connector that needs authorization gets a
+// - DPJ and Mural are Cursor account connectors. A status read checks
+//   them silently. Only a connector that needs authorization gets a
 //   minted sign-in URL, opened in the browser, then polled until Cursor
 //   stores the token.
+// - Figma is not an agent source; use the IDE Figma plugin in chat.
 //
 // The account calls use @grok/agent-sdk internals (not in its public
 // exports). Recheck these imports after an SDK upgrade.
@@ -15,13 +16,12 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const SOURCE_NAMES = ["aha", "dpj", "mural", "figma"];
+export const SOURCE_NAMES = ["aha", "dpj", "mural"];
 
 /** Cursor account connector behind each IDE plugin. Must match bot/mcp-connections. */
 export const ACCOUNT_CONNECTORS = {
   dpj: "user-Dpj-openproject",
   mural: "user-Mural",
-  figma: "user-Figma",
 };
 
 const POLL_START_MS = 3_000;
@@ -165,7 +165,7 @@ export function createConnectors({ root, env, log = (line) => console.error(line
       throw new Error(`${source}: ${ACCOUNT_CONNECTORS[source]} is not on this Cursor account. Install the ${source} plugin in Cursor first.`);
     }
     if (state !== "needsAuth") {
-      log(`${source}: status "${state}" (for Figma this is often a temporary rate limit). Continuing.`);
+      log(`${source}: status "${state}". Continuing.`);
       return;
     }
     if (source === "aha") await signInAha();

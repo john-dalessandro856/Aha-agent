@@ -1,5 +1,5 @@
 ---
-description: Use when the user wants a deep analysis of DPJ (OpenProject) work packages — insights across a topic, project, or version; open questions; duplicates or overlap; gaps; dependencies; or a comparison with Aha/Mural/Figma.
+description: Use when the user wants a deep analysis of DPJ (OpenProject) work packages — insights across a topic, project, or version; open questions; duplicates or overlap; gaps; dependencies; or a comparison with Aha/Mural.
 ---
 
 # DPJ work package analysis
@@ -67,5 +67,6 @@ short evidence quote or field state, and a suggested owner when one is named.
 End with a short **Coverage** line: searches run, candidates triaged,
 packages read in detail, and anything you could not access.
 
-When comparing with Aha, Mural, or Figma, pull each system with its own tools
-and label which system each finding came from.
+When comparing with Aha or Mural, pull each system with its own tools and
+label which system each finding came from. Figma is not available here —
+use the IDE Figma plugin instead.

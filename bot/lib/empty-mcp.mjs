@@ -1,7 +1,7 @@
 // Stdio MCP server with no tools. `ask` points unselected connections here
-// so the process never opens Aha, DPJ, Mural, or Figma for a system the
-// question did not select. Speaks newline-delimited JSON-RPC, same framing
-// as @modelcontextprotocol/sdk stdio.
+// so the process never opens Aha, DPJ, or Mural for a system the question
+// did not select. Speaks newline-delimited JSON-RPC, same framing as
+// @modelcontextprotocol/sdk stdio.
 import { createInterface } from "node:readline";
 
 const name = process.argv[2] ?? "inactive";

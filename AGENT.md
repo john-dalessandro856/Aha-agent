@@ -1,7 +1,8 @@
 # Aha + DPJ Analysis Agent
 
 This project analyzes product and delivery work across Bayer Aha and DPJ
-(OpenProject), and can compare those records with Mural and Figma artifacts.
+(OpenProject), and can compare those records with Mural. Figma comparisons
+use the IDE Figma plugin, not an agent MCP connection.
 
 ## Goals
 

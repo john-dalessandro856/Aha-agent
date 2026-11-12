@@ -1,20 +1,21 @@
 // Which MCP connections this process may contact.
 //
-// `ask` sets AGENT_SOURCES (comma-separated: aha, dpj, mural, figma).
+// `ask` sets AGENT_SOURCES (comma-separated: aha, dpj, mural).
 // An unset value means serve / eval / a direct `agent-sdk run`: every
-// connection stays available, but Mural, Figma, and DPJ are optional so a
+// connection stays available, but Mural and DPJ are optional so a
 // missing token cannot abort an Aha turn.
 //
 // A name left out of AGENT_SOURCES is not advertised and does not open
 // that server. `mcp oauth aha` must run with AGENT_SOURCES unset so the
-// connection file still exports the real server. DPJ, Mural, and Figma
-// use Cursor account connectors and have no host OAuth.
+// connection file still exports the real server. DPJ and Mural use
+// Cursor account connectors and have no host OAuth. Figma is IDE plugin
+// only — not an agent MCP connection.
 
-export const SOURCE_NAMES = ["aha", "dpj", "mural", "figma"] as const;
+export const SOURCE_NAMES = ["aha", "dpj", "mural"] as const;
 
 export type SourceName = (typeof SOURCE_NAMES)[number];
 
-const OPTIONAL_WHEN_ALL: ReadonlySet<SourceName> = new Set(["dpj", "mural", "figma"]);
+const OPTIONAL_WHEN_ALL: ReadonlySet<SourceName> = new Set(["dpj", "mural"]);
 
 export type SourceMode =
   | { active: true; optional: boolean }

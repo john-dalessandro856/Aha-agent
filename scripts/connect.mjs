@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Usage: npm run connect [-- aha dpj mural figma] [--status]
-// Checks each named source's sign-in (all four by default). A working
+// Usage: npm run connect [-- aha dpj mural] [--status]
+// Checks each named source's sign-in (aha, dpj, mural by default). A working
 // sign-in passes silently; one that needs authorization opens its sign-in
 // page in the browser and waits. --status reports without signing in.
 import { dirname, join } from "node:path";

@@ -27,24 +27,24 @@ independent. Do not authorize or query one to unblock another.
 | DPJ / OpenProject reads | The IDE OpenProject plugin in this chat. Do not start `ask` for a read. |
 | DPJ writes (create, update, relate, comment, close) | The `dpj-write-records` skill (`.cursor/skills/dpj-write-records/`). Dry-run until `--apply`. |
 | Mural only | The IDE Mural plugin in this chat. |
-| Figma only | The IDE Figma plugin in this chat. Do not run `agent-sdk mcp oauth` for Figma. |
-| A comparison that includes Aha | `npm run ask -- --sources aha,dpj` (add `mural` or `figma` only when that comparison includes them) |
+| Figma only | The IDE Figma plugin in this chat. Never add Figma to `ask` / agent MCP. |
+| A comparison that includes Aha | `npm run ask -- --sources aha,dpj` (add `mural` only when that comparison includes Mural). For Figma pieces, use the IDE Figma plugin in this chat. |
 
 `ask` sets `AGENT_SOURCES` for that process. Connections left out are not
 opened. Omit `--sources` and the script infers them from the question; Mural
-and Figma are included only when the question names them. With no signal it
-uses Aha only.
+is included only when the question names it. With no signal it uses Aha only.
+Figma is never an `ask` source.
 
-The agent has its own sign-in for Aha only. DPJ, Mural, and Figma use the
-Cursor account connectors that back the IDE plugins, so they share the
-IDE's sign-in:
+The agent has its own sign-in for Aha only. DPJ and Mural use the Cursor
+account connectors that back the IDE plugins, so they share the IDE's
+sign-in. Figma uses the IDE plugin only (no agent connection):
 
 | Source | Agent connection | Auth |
 | --- | --- | --- |
 | Aha | `bayer.aha.io` MCP | Host OAuth |
 | DPJ | `user-Dpj-openproject` | Cursor account, read-only |
 | Mural | `user-Mural` | Cursor account |
-| Figma | `user-Figma` | Cursor account |
+| Figma | none (IDE plugin) | Cursor account via IDE |
 
 Sign-in is automatic and only for the sources a question selects
 (`scripts/lib/connectors.mjs`). Before the turn, `ask` checks each selected
@@ -57,15 +57,13 @@ stops on authorization, `ask` signs that source in and retries once.
   status, session id, and trace path.
 - When a sign-in page opens, tell the user to finish it in the browser. Do
   not dry-run around it.
-- `npm run connect -- --status` reports all four sign-ins without opening
-  anything. `npm run connect -- <source>` signs one in on its own.
-- Do not run `agent-sdk mcp oauth` for DPJ, Mural, or Figma, and do not send
-  the user to the dashboard for them. `npm run connect` mints the real
+- `npm run connect -- --status` reports Aha/DPJ/Mural sign-ins without
+  opening anything. `npm run connect -- <source>` signs one in on its own.
+- Do not run `agent-sdk mcp oauth` for DPJ or Mural, and do not send the
+  user to the dashboard for them. `npm run connect` mints the real
   sign-in page.
 - The agent cannot write to DPJ. DPJ writes go through the
   `dpj-write-records` skill in this chat.
-- If serve logs `HTTP 429` on `user-Figma`, Figma is rate limiting the
-  account. Wait and retry.
 - The script sets `--use-system-ca`. Without it Node fails on Bayer's TLS
   proxy (`fetch failed` / `SELF_SIGNED_CERT_IN_CHAIN`).
 - Multi-step analysis can take several minutes. Allow up to 15 minutes
