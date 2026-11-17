@@ -60,6 +60,18 @@ export const RULES = {
   "R-LF-011": "Lifecycle path: the same Aha record participates in independent mural↔Aha and Figma↔Aha assessments; each hop keeps its own status.",
   "R-LF-012": "Figma URL on a mural description is an identity claim when muralDescriptionFigmaUrl is enabled; CONFIRMED only when verified.",
   "R-LF-013": "RESEARCH_DESIGN_MISMATCH: CONFIRMED or PROBABLE mural↔Figma pair with material title/description disagreement.",
+  "R-LF-014": "Aha vsts integration field or description/custom-field ADO URL is an identity claim when enabled; CONFIRMED only when verified.",
+  "R-LF-015": "Aha reference in an ADO work-item title is an identity claim when adoTitleAhaRef is enabled; never from comments alone (R-ID-007).",
+  "R-LF-016": "ENGINEERING_PLANNING_MISMATCH: CONFIRMED or PROBABLE Aha↔ADO pair with material title/description/state disagreement.",
+  "R-LF-017": "PLANNING_ABSENT_FROM_ENGINEERING: Aha in scope with expectEngineeringCounterpart and no matching ADO evidence.",
+  "R-LF-018": "STALE_ADO_LINK: Aha ADO URL/id does not match the supplied work-item evidence.",
+  "R-LF-019": "ORPHAN_ENGINEERING_EVIDENCE: ADO evidence supplied with expectation true and no planning candidate — NOT MISSING unless R-MISS-001 holds.",
+  "R-LF-020": "Aha description or named custom-field GitHub URL is an identity claim when enabled; CONFIRMED only when verified.",
+  "R-LF-021": "Aha reference in a GitHub issue/PR title is an identity claim when githubTitleAhaRef is enabled; commit/branch refs are never identity by default.",
+  "R-LF-022": "IMPLEMENTATION_PLANNING_MISMATCH: CONFIRMED or PROBABLE Aha↔GitHub pair with material title/description/state disagreement.",
+  "R-LF-023": "PLANNING_ABSENT_FROM_IMPLEMENTATION: Aha in scope with expectImplementationCounterpart and no matching GitHub evidence.",
+  "R-LF-024": "ORPHAN_IMPLEMENTATION_EVIDENCE: GitHub evidence supplied with expectation true and no planning candidate — NOT MISSING unless R-MISS-001 holds.",
+  "R-LF-025": "UNSUPPORTED_COMPLETION_CLAIM: planning marked complete while supplied GitHub PR/issue evidence is still open or unmerged.",
 } as const;
 
 /** Severity for Phase 4 lifecycle discrepancy kinds (rule-mediated). */
@@ -110,6 +122,46 @@ export const LIFECYCLE_DISCREPANCY: Partial<
     severity: "HIGH",
     impact: "Research board and design mockup disagree on material scope; users may see the wrong experience.",
     ruleRefs: ["R-LF-013"],
+  },
+  ENGINEERING_PLANNING_MISMATCH: {
+    severity: "HIGH",
+    impact: "Planning and engineering describe different scope; delivery may build the wrong work.",
+    ruleRefs: ["R-LF-016"],
+  },
+  PLANNING_ABSENT_FROM_ENGINEERING: {
+    severity: "MEDIUM",
+    impact: "A planning record in scope has no matching Azure DevOps evidence.",
+    ruleRefs: ["R-LF-017"],
+  },
+  STALE_ADO_LINK: {
+    severity: "HIGH",
+    impact: "The Azure DevOps link on the planning record does not match the work item under review.",
+    ruleRefs: ["R-LF-018"],
+  },
+  ORPHAN_ENGINEERING_EVIDENCE: {
+    severity: "MEDIUM",
+    impact: "ADO evidence was supplied with no planning counterpart in the queried scope.",
+    ruleRefs: ["R-LF-019"],
+  },
+  IMPLEMENTATION_PLANNING_MISMATCH: {
+    severity: "HIGH",
+    impact: "Planning and implementation describe different scope; code may not match the plan.",
+    ruleRefs: ["R-LF-022"],
+  },
+  PLANNING_ABSENT_FROM_IMPLEMENTATION: {
+    severity: "MEDIUM",
+    impact: "A planning record in scope has no matching GitHub evidence.",
+    ruleRefs: ["R-LF-023"],
+  },
+  ORPHAN_IMPLEMENTATION_EVIDENCE: {
+    severity: "MEDIUM",
+    impact: "GitHub evidence was supplied with no planning counterpart in the queried scope.",
+    ruleRefs: ["R-LF-024"],
+  },
+  UNSUPPORTED_COMPLETION_CLAIM: {
+    severity: "HIGH",
+    impact: "Planning claims completion while implementation evidence is still open or unmerged.",
+    ruleRefs: ["R-LF-025"],
   },
 };
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { ahaRefFromTitle, parseFigmaUrls, parseMuralUrls, resolveMuralId } from "./links";
+import { ahaRefFromTitle, parseAdoUrls, parseFigmaUrls, parseGithubUrls, parseMuralUrls, resolveMuralId } from "./links";
 
 describe("parseFigmaUrls", () => {
   test("extracts fileKey and nodeId from a design URL", () => {
@@ -45,5 +45,36 @@ describe("resolveMuralId", () => {
 
   test("parses a member URL", () => {
     assert.equal(resolveMuralId("https://app.mural.co/t/bayer1789/m/bayer1789/1771356982650"), "bayer1789.1771356982650");
+  });
+});
+
+describe("parseAdoUrls", () => {
+  test("extracts work-item id from dev.azure.com", () => {
+    const hits = parseAdoUrls("See https://dev.azure.com/bayer/Velocity/_workitems/edit/12345");
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0]?.workItemId, "12345");
+    assert.equal(hits[0]?.org, "bayer");
+    assert.equal(hits[0]?.project, "Velocity");
+  });
+
+  test("extracts from visualstudio.com and dedupes", () => {
+    const url = "https://bayer.visualstudio.com/Velocity/_workitems/edit/9";
+    assert.equal(parseAdoUrls(`${url} again ${url}`).length, 1);
+    assert.equal(parseAdoUrls(url)[0]?.workItemId, "9");
+  });
+});
+
+describe("parseGithubUrls", () => {
+  test("extracts issue, pull, and commit targets", () => {
+    const hits = parseGithubUrls(
+      "https://github.com/bayer/aha-agent/issues/1 and https://github.com/bayer/aha-agent/pull/2 and https://github.com/bayer/aha-agent/commit/abcdef1",
+    );
+    assert.equal(hits.length, 3);
+    assert.equal(hits[0]?.targetId, "bayer/aha-agent#1");
+    assert.equal(hits[0]?.kind, "issue");
+    assert.equal(hits[1]?.targetId, "bayer/aha-agent#2");
+    assert.equal(hits[1]?.kind, "pr");
+    assert.equal(hits[2]?.targetId, "bayer/aha-agent@abcdef1");
+    assert.equal(hits[2]?.kind, "commit");
   });
 });

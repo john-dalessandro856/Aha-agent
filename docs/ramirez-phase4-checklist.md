@@ -542,9 +542,9 @@ Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONL
 
 ### Sprint D — Aha ↔ Aha (optional)
 
-- [ ] Operator chooses A-ID-1 (engine vs `aha-analysis`)
+- [x] Operator chooses A-ID-1: keep soft analysis on `aha-analysis` (skill-only)
 - [ ] If engine: tool + sibling/linked candidate discovery + `INTRA_AHA_*` kinds
-- [ ] If skill-only: document that in instructions; no engine work
+- [x] If skill-only: document that in instructions; no engine work
 
 ### Sprint E — Phase 5 lifecycle (research ↔ design)
 
@@ -559,28 +559,28 @@ Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONL
 
 ### Sprint F — Phase 4c ADO ↔ Aha
 
-- [ ] `parseAdoUrls` + `normalizeAdoWorkItem` (`adapters/ado.ts` / `links.ts`)
-- [ ] Extend Aha extractors for description/custom-field ADO URLs; keep `vsts`
-- [ ] LinkKinds + conventions + `withVerifiedConventions` for ADO-ID-*
-- [ ] `reconcile_ado_planning` tool + `ramirez-ado-planning` skill
-- [ ] Pair engine (`reconcile-ado.ts`)
-- [ ] Emit `ENGINEERING_PLANNING_MISMATCH`, `PLANNING_ABSENT_FROM_ENGINEERING`,
+- [x] `parseAdoUrls` + `normalizeAdoWorkItem` (`adapters/ado.ts` / `links.ts`)
+- [x] Extend Aha extractors for description/custom-field ADO URLs; keep `vsts`
+- [x] LinkKinds + conventions + `withVerifiedConventions` for ADO-ID-*
+- [x] `reconcile_ado_planning` tool + `ramirez-ado-planning` skill
+- [x] Pair engine (`reconcile-ado.ts`)
+- [x] Emit `ENGINEERING_PLANNING_MISMATCH`, `PLANNING_ABSENT_FROM_ENGINEERING`,
       `ORPHAN_ENGINEERING_EVIDENCE`, `STALE_ADO_LINK`
-- [ ] Tests with fixtures only — never mock an ADO MCP connection
-- [ ] Update `docs/ramirez.md` observed status only when this sprint ships
+- [x] Tests with fixtures only — never mock an ADO MCP connection
+- [x] Update `docs/ramirez.md` observed status only when this sprint ships
 
 ### Sprint G — Phase 4d GitHub ↔ Aha
 
-- [ ] `parseGithubUrls` + `normalizeGithubArtifact` (`adapters/github.ts` / `links.ts`)
-- [ ] Extend Aha extractors for github.com issue/PR URLs
-- [ ] LinkKinds + conventions + `withVerifiedConventions` for GH-ID-*
-- [ ] `reconcile_github_planning` tool + `ramirez-github-planning` skill
-- [ ] Pair engine (`reconcile-github.ts`)
-- [ ] Emit `IMPLEMENTATION_PLANNING_MISMATCH`,
+- [x] `parseGithubUrls` + `normalizeGithubArtifact` (`adapters/github.ts` / `links.ts`)
+- [x] Extend Aha extractors for github.com issue/PR URLs
+- [x] LinkKinds + conventions + `withVerifiedConventions` for GH-ID-*
+- [x] `reconcile_github_planning` tool + `ramirez-github-planning` skill
+- [x] Pair engine (`reconcile-github.ts`)
+- [x] Emit `IMPLEMENTATION_PLANNING_MISMATCH`,
       `PLANNING_ABSENT_FROM_IMPLEMENTATION`, `ORPHAN_IMPLEMENTATION_EVIDENCE`;
       reuse `UNSUPPORTED_COMPLETION_CLAIM` when evidence supports
-- [ ] Tests with fixtures; assert GitHub never on `READ_TOOL_ALLOWLIST`
-- [ ] Update `docs/ramirez.md` observed status only when this sprint ships
+- [x] Tests with fixtures; assert GitHub never on `READ_TOOL_ALLOWLIST`
+- [x] Update `docs/ramirez.md` observed status only when this sprint ships
 
 ---
 
@@ -640,9 +640,8 @@ Phase 4d **done** when:
 - Commit/branch refs do not confirm identity by default
 - `docs/ramirez.md` updated for observed GitHub interface status
 
-Phase 4a/4b are implemented. Phase 4c/4d are planned here and trail until
-Sprint F/G land. Full Phase 4 is complete only when 4c and 4d DoD above are
-met (Aha↔Aha optional remains operator-gated).
+Phase 4a/4b/4c/4d are implemented. Aha↔Aha remains skill-only (`aha-analysis`).
+Optional later work: ADO/GitHub hops inside `reconcile_lifecycle`.
 
 ---
 

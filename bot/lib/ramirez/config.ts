@@ -31,6 +31,14 @@ export type RamirezConfig = {
     muralTitleAhaRef: ConventionFlag;
     /** Figma URL pasted on a mural board description (research → design). */
     muralDescriptionFigmaUrl: ConventionFlag;
+    /** Aha vsts integration field → Azure DevOps work item (ADO-ID-1). */
+    ahaIntegrationField: ConventionFlag;
+    ahaDescriptionAdoUrl: ConventionFlag;
+    ahaCustomFieldAdoUrl: NamedFieldConvention;
+    adoTitleAhaRef: ConventionFlag;
+    ahaDescriptionGithubUrl: ConventionFlag;
+    ahaCustomFieldGithubUrl: NamedFieldConvention;
+    githubTitleAhaRef: ConventionFlag;
   };
   /** Aha status category or name → shared bucket. Null: status equivalence unknown. */
   statusMapping: { aha: Record<string, string>; dpj: Record<string, string>; completeBuckets: string[] } | null;
@@ -53,6 +61,13 @@ export type VerifiableConventionKind = Extract<
   | "aha_custom_field_mural_url"
   | "mural_title_aha_ref"
   | "mural_description_figma_url"
+  | "aha_integration_field"
+  | "aha_description_ado_url"
+  | "aha_custom_field_ado_url"
+  | "ado_title_aha_ref"
+  | "aha_description_github_url"
+  | "aha_custom_field_github_url"
+  | "github_title_aha_ref"
 >;
 
 const OPERATOR = "operator (person running the agent)";
@@ -78,6 +93,13 @@ export const DEFAULT_CONFIG: RamirezConfig = {
     ahaCustomFieldMuralUrl: { enabled: true, verified: false, fieldNames: [], source: OPERATOR },
     muralTitleAhaRef: { enabled: true, verified: false, source: OPERATOR },
     muralDescriptionFigmaUrl: { enabled: true, verified: false, source: OPERATOR },
+    ahaIntegrationField: { enabled: true, verified: false, source: OPERATOR },
+    ahaDescriptionAdoUrl: { enabled: true, verified: false, source: OPERATOR },
+    ahaCustomFieldAdoUrl: { enabled: true, verified: false, fieldNames: [], source: OPERATOR },
+    adoTitleAhaRef: { enabled: true, verified: false, source: OPERATOR },
+    ahaDescriptionGithubUrl: { enabled: true, verified: false, source: OPERATOR },
+    ahaCustomFieldGithubUrl: { enabled: true, verified: false, fieldNames: [], source: OPERATOR },
+    githubTitleAhaRef: { enabled: true, verified: false, source: OPERATOR },
   },
   statusMapping: null,
   typeEquivalence: { epic: "epic", master_feature: "epic", feature: "feature", initiative: "initiative" },
@@ -121,6 +143,13 @@ export function withVerifiedConventions(config: RamirezConfig, kinds: readonly V
       ahaCustomFieldMuralUrl: mark(c.ahaCustomFieldMuralUrl, "aha_custom_field_mural_url"),
       muralTitleAhaRef: mark(c.muralTitleAhaRef, "mural_title_aha_ref"),
       muralDescriptionFigmaUrl: mark(c.muralDescriptionFigmaUrl, "mural_description_figma_url"),
+      ahaIntegrationField: mark(c.ahaIntegrationField, "aha_integration_field"),
+      ahaDescriptionAdoUrl: mark(c.ahaDescriptionAdoUrl, "aha_description_ado_url"),
+      ahaCustomFieldAdoUrl: mark(c.ahaCustomFieldAdoUrl, "aha_custom_field_ado_url"),
+      adoTitleAhaRef: mark(c.adoTitleAhaRef, "ado_title_aha_ref"),
+      ahaDescriptionGithubUrl: mark(c.ahaDescriptionGithubUrl, "aha_description_github_url"),
+      ahaCustomFieldGithubUrl: mark(c.ahaCustomFieldGithubUrl, "aha_custom_field_github_url"),
+      githubTitleAhaRef: mark(c.githubTitleAhaRef, "github_title_aha_ref"),
     },
   };
 }
@@ -146,6 +175,20 @@ export function conventionVerified(config: RamirezConfig, kind: LinkKind): boole
       return config.conventions.muralTitleAhaRef.verified;
     case "mural_description_figma_url":
       return config.conventions.muralDescriptionFigmaUrl.verified;
+    case "aha_integration_field":
+      return config.conventions.ahaIntegrationField.verified;
+    case "aha_description_ado_url":
+      return config.conventions.ahaDescriptionAdoUrl.verified;
+    case "aha_custom_field_ado_url":
+      return config.conventions.ahaCustomFieldAdoUrl.verified;
+    case "ado_title_aha_ref":
+      return config.conventions.adoTitleAhaRef.verified;
+    case "aha_description_github_url":
+      return config.conventions.ahaDescriptionGithubUrl.verified;
+    case "aha_custom_field_github_url":
+      return config.conventions.ahaCustomFieldGithubUrl.verified;
+    case "github_title_aha_ref":
+      return config.conventions.githubTitleAhaRef.verified;
     default:
       return false;
   }

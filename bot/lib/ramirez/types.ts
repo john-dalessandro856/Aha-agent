@@ -77,6 +77,12 @@ export type LinkKind =
   | "aha_custom_field_mural_url"
   | "mural_title_aha_ref"
   | "mural_description_figma_url"
+  | "aha_description_ado_url"
+  | "aha_custom_field_ado_url"
+  | "ado_title_aha_ref"
+  | "aha_description_github_url"
+  | "aha_custom_field_github_url"
+  | "github_title_aha_ref"
   | "text_mention";
 
 export type CrossSystemLink = {
@@ -208,7 +214,14 @@ export type DiscrepancyKind =
   | "ORPHAN_RESEARCH_EVIDENCE"
   | "INTRA_AHA_CONTRADICTION"
   | "INTRA_AHA_DUPLICATE"
-  | "RESEARCH_DESIGN_MISMATCH";
+  | "RESEARCH_DESIGN_MISMATCH"
+  | "ENGINEERING_PLANNING_MISMATCH"
+  | "PLANNING_ABSENT_FROM_ENGINEERING"
+  | "ORPHAN_ENGINEERING_EVIDENCE"
+  | "STALE_ADO_LINK"
+  | "IMPLEMENTATION_PLANNING_MISMATCH"
+  | "PLANNING_ABSENT_FROM_IMPLEMENTATION"
+  | "ORPHAN_IMPLEMENTATION_EVIDENCE";
 
 export type ConflictingValue = { artifact: string; field: string; value: string | null; provenance?: Provenance };
 
@@ -290,12 +303,16 @@ export type ReconciliationResult = {
     dpj: string[];
     mural: string[];
     figma: string[];
+    ado: string[];
+    github: string[];
     options: {
       expectDpjCounterpart: boolean;
       expectPlanningCounterpart: boolean;
       expectDesignCounterpart: boolean;
+      expectEngineeringCounterpart: boolean;
+      expectImplementationCounterpart: boolean;
       dpjProjectId: string | null;
-      transition: "aha_dpj" | "mural_aha" | "figma_aha" | "lifecycle";
+      transition: "aha_dpj" | "mural_aha" | "figma_aha" | "lifecycle" | "ado_aha" | "github_aha";
     };
   };
   systemsQueried: SystemId[];

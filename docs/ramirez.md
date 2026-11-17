@@ -1,7 +1,7 @@
 # Ramirez
 
 Normative behavior: see [`ramirez-operating-plan.md`](ramirez-operating-plan.md).
-Phase 4 enablement checklist (Figma/Mural/Aha-consistency): [`ramirez-phase4-checklist.md`](ramirez-phase4-checklist.md).
+Phase 4 enablement checklist: [`ramirez-phase4-checklist.md`](ramirez-phase4-checklist.md).
 This file is observed capability status only.
 
 Ramirez is an individual tool: the person running the agent is the operator.
@@ -9,8 +9,9 @@ They choose which identity conventions to trust (`verified` in config or
 per-run `withVerifiedConventions`). There is no separate organizational
 sign-off step.
 
-Ramirez reconciles selected Aha records with DPJ work packages. It reads,
-compares, and proposes. It does not write to Aha or DPJ.
+Ramirez reconciles selected Aha records with DPJ work packages and with
+operator-supplied lifecycle evidence (Mural, Figma, Azure DevOps, GitHub).
+It reads, compares, and proposes. It does not write to those systems.
 
 Reconciliation tools:
 
@@ -19,12 +20,16 @@ Reconciliation tools:
 | `reconcile_planning` | Aha ↔ DPJ |
 | `reconcile_mural_planning` | Mural ↔ Aha (operator may `verifyConventions` per run) |
 | `reconcile_figma_planning` | Figma ↔ Aha (IDE-supplied evidence only; no Figma MCP) |
+| `reconcile_ado_planning` | ADO ↔ Aha (operator/IDE-supplied evidence only; no ADO connector) |
+| `reconcile_github_planning` | GitHub ↔ Aha (operator/IDE-supplied evidence only; never agent MCP) |
 | `reconcile_lifecycle` | Phase 5: independent mural↔Aha + Figma↔Aha hops, stitched Aha paths, optional mural↔Figma |
 
-Azure DevOps and GitHub remain not queried. Sticky/area text on murals is
-evidence context only — never identity. Figma screenshots are human
-context only — never identity. Lifecycle hops do not inherit each other's
-CONFIRMED status.
+Aha↔Aha consistency stays on the `aha-analysis` skill (no engine tool).
+Sticky/area text on murals is evidence context only — never identity.
+Figma screenshots are human context only — never identity. Commit messages
+and branch names are never identity by default. Lifecycle hops do not
+inherit each other's CONFIRMED status. ADO/GitHub hops are not yet part of
+`reconcile_lifecycle`.
 
 ## Mode
 
@@ -42,9 +47,11 @@ Ramirez does not import it.
 
 ## Flow
 
-1. The user names at most five Aha references or five DPJ work package IDs.
-2. `reconcile_planning` reads those records through the Aha and DPJ adapters.
-3. `bot/lib/ramirez/reconcile.ts` decides relationship, alignment,
+1. The user names at most five Aha references or five DPJ work package IDs
+   (or supplies Mural/Figma/ADO/GitHub evidence for those transitions).
+2. The matching `reconcile_*` tool reads through allowlisted adapters or
+   normalizes operator/IDE evidence.
+3. `bot/lib/ramirez/reconcile*.ts` decides relationship, alignment,
    discrepancy, and proposal. It cites evidence IDs and rule IDs from
    `bot/lib/ramirez/rules.ts`.
 4. `bot/lib/ramirez/report.ts` copies that result into `report`. It does not
@@ -84,12 +91,13 @@ candidate. The current DPJ search cannot meet that bar.
 | DPJ | production | `search_work_packages` |
 | Mural | production (evidence) | `search_murals`, `get_mural_info`, `get_canvas_overview`, `get_document_tree`, `list_widgets` |
 | Figma | interface only (IDE plugin) | none from the agent; `normalizeFigmaNode` / `parseFigmaUrl` normalize chat-side reads |
-| Azure DevOps | none | nothing |
-| GitHub | none | nothing |
+| Azure DevOps | interface only (operator/IDE evidence) | none from the agent; `normalizeAdoWorkItem` / `parseAdoUrls` normalize supplied evidence |
+| GitHub | interface only (operator/IDE evidence) | none from the agent; `normalizeGithubArtifact` / `parseGithubUrls` normalize supplied evidence — never on `READ_TOOL_ALLOWLIST` |
 
 `bot/lib/ramirez/capabilities.ts` refuses any other tool name before the
-host calls it. Aha and DPJ links to Azure DevOps are reported as downstream
-links with retrieval state `NOT_RETRIEVED`.
+host calls it. On default Aha↔DPJ runs, Aha links to Azure DevOps stay
+downstream with retrieval state `NOT_RETRIEVED` until an ADO reconcile run
+supplies matching evidence.
 
 The shared Aha, DPJ, and Mural connections are not narrowed. Those
 connections also serve the analysis agent. Narrowing them would remove
@@ -99,7 +107,8 @@ Verified live reads (2026-11-17): Mural `MMC Bi-Weekly`
 (`bayer1789.1771356982650`); Figma Product-Profiles
 (`Mfpvi8EkGRio9wuSXi5ZzS`) Portfolio Main / Profile Main. No Figma layer
 titled "Product Parentage Outline" was found; Aha parentage epics link that
-Product-Profiles file.
+Product-Profiles file. ADO and GitHub normalizers are fixture-tested only
+(no live connector).
 
 DPJ `search_work_packages` output has a static schema. A live search result
 has not been observed by this code, so the normalizer follows that schema

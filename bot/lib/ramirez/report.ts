@@ -12,6 +12,8 @@ function label(key: string | undefined): string {
   if (system === "dpj") return `DPJ ${id}`;
   if (system === "mural") return `Mural ${id}`;
   if (system === "figma") return `Figma ${id}`;
+  if (system === "azure_devops") return `ADO ${id}`;
+  if (system === "github") return `GitHub ${id}`;
   return `${system} ${id}`;
 }
 
@@ -43,6 +45,8 @@ export function renderReport(result: ReconciliationResult): string {
     result.scope.dpj.length ? `DPJ ${result.scope.dpj.join(", ")}` : "",
     result.scope.mural.length ? `Mural ${result.scope.mural.join(", ")}` : "",
     result.scope.figma.length ? `Figma ${result.scope.figma.join(", ")}` : "",
+    result.scope.ado.length ? `ADO ${result.scope.ado.join(", ")}` : "",
+    result.scope.github.length ? `GitHub ${result.scope.github.join(", ")}` : "",
   ]
     .filter(Boolean)
     .join("; ");
@@ -51,9 +55,13 @@ export function renderReport(result: ReconciliationResult): string {
       ? "Mural ↔ Aha"
       : result.scope.options.transition === "figma_aha"
         ? "Figma ↔ Aha"
-        : result.scope.options.transition === "lifecycle"
-          ? "Lifecycle (Mural ↔ Aha ↔ Figma)"
-          : "Aha ↔ DPJ";
+        : result.scope.options.transition === "ado_aha"
+          ? "ADO ↔ Aha"
+          : result.scope.options.transition === "github_aha"
+            ? "GitHub ↔ Aha"
+            : result.scope.options.transition === "lifecycle"
+              ? "Lifecycle (Mural ↔ Aha ↔ Figma)"
+              : "Aha ↔ DPJ";
   sections.push(
     ["## Scope", `Transition: ${transition}.`, `Records requested: ${requested || "none"}.`, `Systems queried: ${queried}.`, "Systems not queried:", notQueried].join("\n"),
   );

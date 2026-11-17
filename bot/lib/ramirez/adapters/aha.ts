@@ -1,7 +1,7 @@
 // Normalizes one Aha `read_records` result record. Field names follow the
 // shape observed in this repo's local traces; nothing else is assumed.
 import type { RamirezConfig } from "../config";
-import { parseFigmaUrls, parseMuralUrls } from "../links";
+import { parseAdoUrls, parseFigmaUrls, parseGithubUrls, parseMuralUrls } from "../links";
 import { excerpt } from "../redact";
 import { isAhaRef, stripMarkup } from "../text";
 import type { Artifact, CrossSystemLink, Field, Provenance } from "../types";
@@ -77,6 +77,30 @@ export function normalizeAhaRecord(raw: unknown, config: RamirezConfig, retrieve
         });
       }
     }
+    if (config.conventions.ahaDescriptionAdoUrl.enabled) {
+      for (const ado of parseAdoUrls(description)) {
+        links.push({
+          targetSystem: "azure_devops",
+          targetId: ado.workItemId,
+          url: ado.url,
+          kind: "aha_description_ado_url",
+          claimsIdentity: true,
+          provenance: prov("description", ado.url),
+        });
+      }
+    }
+    if (config.conventions.ahaDescriptionGithubUrl.enabled) {
+      for (const gh of parseGithubUrls(description)) {
+        links.push({
+          targetSystem: "github",
+          targetId: gh.targetId,
+          url: gh.url,
+          kind: "aha_description_github_url",
+          claimsIdentity: true,
+          provenance: prov("description", gh.url),
+        });
+      }
+    }
   }
   for (const cf of arr(r.custom_fields)) {
     const c = obj(cf);
@@ -110,6 +134,32 @@ export function normalizeAhaRecord(raw: unknown, config: RamirezConfig, retrieve
           kind: "aha_custom_field_mural_url",
           claimsIdentity: true,
           provenance: prov(fieldPath, mural.url),
+        });
+      }
+    }
+    const adoFields = config.conventions.ahaCustomFieldAdoUrl;
+    if (adoFields.enabled && (adoFields.fieldNames.length === 0 || adoFields.fieldNames.includes(fieldName))) {
+      for (const ado of parseAdoUrls(value)) {
+        links.push({
+          targetSystem: "azure_devops",
+          targetId: ado.workItemId,
+          url: ado.url,
+          kind: "aha_custom_field_ado_url",
+          claimsIdentity: true,
+          provenance: prov(fieldPath, ado.url),
+        });
+      }
+    }
+    const githubFields = config.conventions.ahaCustomFieldGithubUrl;
+    if (githubFields.enabled && (githubFields.fieldNames.length === 0 || githubFields.fieldNames.includes(fieldName))) {
+      for (const gh of parseGithubUrls(value)) {
+        links.push({
+          targetSystem: "github",
+          targetId: gh.targetId,
+          url: gh.url,
+          kind: "aha_custom_field_github_url",
+          claimsIdentity: true,
+          provenance: prov(fieldPath, gh.url),
         });
       }
     }
