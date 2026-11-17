@@ -2,11 +2,15 @@ import { defineTool } from "@grok/agent-sdk/tools";
 import { z } from "zod";
 import { DEFAULT_CONFIG } from "../lib/ramirez/config";
 import { reconcile } from "../lib/ramirez/reconcile";
+import { renderReport } from "../lib/ramirez/report";
 import { createAhaMcpAdapter, createDpjMcpAdapter, RetrievalSession } from "../lib/ramirez/retrieval";
+import type { ReconciliationResult } from "../lib/ramirez/types";
+
+export type ReconcilePlanningResult = ReconciliationResult & { report: string };
 
 export default defineTool({
   description:
-    "Reconcile selected Aha records with DPJ (OpenProject) work packages. Read-only: returns relationship, alignment, discrepancy, and proposal-only findings with evidence and rule references. Never writes to Aha or DPJ. Use only when the user names Aha references or DPJ work package IDs.",
+    "Reconcile selected Aha records with DPJ (OpenProject) work packages. Read-only. Returns the structured result and a report that copies it. Never writes to Aha or DPJ. Use only when the user names Aha references or DPJ work package IDs. Present the report field as the reply.",
   inputSchema: z
     .object({
       ahaReferences: z
@@ -22,11 +26,11 @@ export default defineTool({
     })
     .refine((v) => (v.ahaReferences?.length ?? 0) + (v.dpjWorkPackageIds?.length ?? 0) > 0, "select at least one Aha reference or DPJ work package ID"),
   effect: "read",
-  async execute(input, ctx) {
+  async execute(input, ctx): Promise<ReconcilePlanningResult> {
     const session = new RetrievalSession();
     const mcp = ctx.host.mcp;
     const config = DEFAULT_CONFIG;
-    return reconcile(
+    const result = await reconcile(
       {
         ahaRefs: input.ahaReferences ?? [],
         dpjIds: (input.dpjWorkPackageIds ?? []).map(String),
@@ -40,5 +44,6 @@ export default defineTool({
         now: () => new Date().toISOString(),
       },
     );
+    return { ...result, report: renderReport(result) };
   },
 });

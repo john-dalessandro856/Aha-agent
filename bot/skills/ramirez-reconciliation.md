@@ -18,37 +18,25 @@ never writes to Aha or DPJ, and no proposal is applied by this agent.
 
 ## Output shape
 
-Write the reply in this order. Omit a section only when it is empty.
+Present the tool's `report` field as the reply. The report already copies
+`statement`, scope, relationships, alignment, discrepancies, proposals, and
+limitations, and it omits empty sections.
 
-1. **Mode line.** `PROPOSAL_ONLY. No changes have been applied.` Copy it from
-   the tool's `statement` field.
-2. **Scope.** The records requested and the systems queried. Use the
-   `systemsQueried` and `systemsNotQueried` fields.
-3. **Relationships.** One line per relationship:
-   `Aha <ref> ↔ DPJ <id>: <status> (score <n>, method <method>, rules <ruleRefs>)`.
-   Give the explanation in one sentence. Name any missing evidence.
-4. **Alignment.** Per confirmed or probable pair: ALIGNED, PARTIALLY_ALIGNED,
-   or CONTRADICTORY, with the differing fields and their values.
-5. **Discrepancies.** Kind, severity, the two values with their source
-   fields, and the recommended resolution.
-6. **Proposals.** Only items in `proposals`. Each shows `proposalId`,
-   target, field, existing value, proposed value, and the approval
-   requirement. State that none was applied.
-7. **Limitations.** Copy each entry from `limitations`. Always include the
-   DPJ subject-only search limit when it appears.
+Do not rewrite the report. Do not change a status, score, method, rule, or
+proposal. Do not add a proposal, a relationship, or a section the report
+omitted.
 
-## Rules for the wording
+## Rules the report already applies
 
-- Separate identity from alignment. A confirmed identity can still have
-  contradictory fields. Say both.
-- Use the status words exactly as the tool returns them. Never upgrade
-  PROBABLE to CONFIRMED.
-- Never say a record is missing unless the relationship status is `MISSING`.
-  `NOT_EVALUATED` means the search could not conclude. Say which state
-  applied: `NOT_AVAILABLE`, `INACCESSIBLE`, `NOT_RETRIEVED`,
-  `NOT_FOUND_WITHIN_QUERIED_SCOPE`, or `NOT_APPLICABLE`.
-- Metadata and semantic matches are never identity. Say so when you cite one.
-- Keep the Aha references, DPJ IDs, and rule references in the answer.
-- Do not invent a status, score, owner, or date. Cite only the tool result.
-- Do not call Mural, Figma, Azure DevOps, or GitHub for this task. The tool
-  does not query them, and the output says so.
+Leave these as the report states them.
+
+- Identity and alignment are separate. A confirmed identity can still have
+  contradictory fields.
+- Status words stay as returned. PROBABLE is not CONFIRMED.
+- A record is missing only when the relationship status is `MISSING`.
+  `NOT_EVALUATED` names the retrieval state: `NOT_AVAILABLE`,
+  `INACCESSIBLE`, `NOT_RETRIEVED`, `NOT_FOUND_WITHIN_QUERIED_SCOPE`, or
+  `NOT_APPLICABLE`.
+- Metadata and semantic matches are not identity.
+- Aha references, DPJ IDs, and rule references stay in the answer.
+- Do not call Mural, Figma, Azure DevOps, or GitHub for this task.
