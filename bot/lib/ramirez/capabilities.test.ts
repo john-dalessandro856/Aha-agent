@@ -10,7 +10,7 @@ describe("read-only gate", () => {
     assert.doesNotThrow(() => assertReadTool("dpj", "user-Dpj-openproject-search_work_packages"));
   });
 
-  const writes: Array<["aha" | "dpj", string]> = [
+  const writes: Array<["aha" | "dpj" | "mural", string]> = [
     ["aha", "create_record"],
     ["aha", "update_records"],
     ["aha", "manage_report"],
@@ -19,6 +19,9 @@ describe("read-only gate", () => {
     ["dpj", "user-Dpj-openproject-update_work_package"],
     ["dpj", "add_relation"],
     ["dpj", "post_comment"],
+    ["mural", "create_stickies"],
+    ["mural", "delete_widgets"],
+    ["mural", "update_widgets"],
   ];
   for (const [system, tool] of writes) {
     test(`refuses ${system}.${tool} before any request is made`, () => {
@@ -28,7 +31,15 @@ describe("read-only gate", () => {
 
   test("the allowlist is closed: nothing is allowed by default", () => {
     assert.deepEqual([...READ_TOOL_ALLOWLIST.dpj], ["search_work_packages"]);
+    assert.ok(READ_TOOL_ALLOWLIST.mural.includes("search_murals"));
     assert.ok(!READ_TOOL_ALLOWLIST.aha.some((t) => /create|update|delete|manage/.test(t)));
+    assert.ok(!READ_TOOL_ALLOWLIST.mural.some((t) => /create|update|delete/.test(t)));
+  });
+
+  test("mural read tools pass", () => {
+    assert.doesNotThrow(() => assertReadTool("mural", "search_murals"));
+    assert.doesNotThrow(() => assertReadTool("mural", "get_mural_info"));
+    assert.doesNotThrow(() => assertReadTool("mural", "get_canvas_overview"));
   });
 });
 

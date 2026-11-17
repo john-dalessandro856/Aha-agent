@@ -3,8 +3,10 @@
 Ramirez reconciles selected Aha records with DPJ work packages. It reads,
 compares, and proposes. It does not write to Aha or DPJ.
 
-The current slice is Aha ↔ DPJ only. Mural, Figma, Azure DevOps, and GitHub
-are named in the result as not queried.
+The reconciliation slice is still Aha ↔ DPJ only. Mural and Figma now have
+evidence normalizers (and Mural has a production MCP adapter) so named boards
+or Figma URLs can be read as evidence. They are not identity-matched to Aha
+or DPJ yet. Azure DevOps and GitHub remain not queried.
 
 ## Mode
 
@@ -62,8 +64,8 @@ candidate. The current DPJ search cannot meet that bar.
 | --- | --- | --- |
 | Aha | production | `read_records`, `search_records` |
 | DPJ | production | `search_work_packages` |
-| Mural | none in this slice | nothing |
-| Figma | none | nothing |
+| Mural | production (evidence) | `search_murals`, `get_mural_info`, `get_canvas_overview`, `get_document_tree`, `list_widgets` |
+| Figma | interface only (IDE plugin) | none from the agent; `normalizeFigmaNode` / `parseFigmaUrl` normalize chat-side reads |
 | Azure DevOps | none | nothing |
 | GitHub | none | nothing |
 
@@ -74,6 +76,12 @@ links with retrieval state `NOT_RETRIEVED`.
 The shared Aha, DPJ, and Mural connections are not narrowed. Those
 connections also serve the analysis agent. Narrowing them would remove
 tools that agent uses. Ramirez's own calls stay on the allowlist above.
+
+Verified live reads (2026-11-17): Mural `MMC Bi-Weekly`
+(`bayer1789.1771356982650`); Figma Product-Profiles
+(`Mfpvi8EkGRio9wuSXi5ZzS`) Portfolio Main / Profile Main. No Figma layer
+titled "Product Parentage Outline" was found; Aha parentage epics link that
+Product-Profiles file.
 
 DPJ `search_work_packages` output has a static schema. A live search result
 has not been observed by this code, so the normalizer follows that schema

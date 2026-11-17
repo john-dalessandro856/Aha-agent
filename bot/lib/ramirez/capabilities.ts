@@ -12,12 +12,13 @@ export class MutationBlockedError extends Error {
  * the connector's own schema or in observed use. Anything else is refused
  * before a request leaves the host.
  */
-export const READ_TOOL_ALLOWLIST: Record<"aha" | "dpj", readonly string[]> = {
+export const READ_TOOL_ALLOWLIST: Record<"aha" | "dpj" | "mural", readonly string[]> = {
   aha: ["read_records", "search_records"],
   dpj: ["search_work_packages"],
+  mural: ["search_murals", "get_mural_info", "get_canvas_overview", "get_document_tree", "list_widgets"],
 };
 
-export function assertReadTool(system: "aha" | "dpj", tool: string): void {
+export function assertReadTool(system: "aha" | "dpj" | "mural", tool: string): void {
   const base = tool.replace(/^user-[A-Za-z0-9]+-[A-Za-z0-9]+-/, "");
   if (!READ_TOOL_ALLOWLIST[system].includes(base)) throw new MutationBlockedError(system, tool);
 }
@@ -72,20 +73,37 @@ export const CAPABILITIES: Record<SystemId, ConnectorCapability> = {
   mural: {
     system: "mural",
     connection: "mural",
-    adapter: "INTERFACE_ONLY",
-    verifiedReads: [],
-    unverifiedReads: ["search_murals", "get_mural_info", "list_widgets", "get_widget_by_id"],
-    declaredButUnusedWrites: ["create_*, update_*, delete_*, lock/unlock, tag, outline, invite tools (removed from the connection)"],
-    notes: ["No research-to-planning identifier convention known."],
+    adapter: "PRODUCTION",
+    verifiedReads: [
+      "search_murals (title match; live: MMC Bi-Weekly → bayer1789.1771356982650)",
+      "get_mural_info (live: title, member_url, dimensions, last_updated)",
+      "get_canvas_overview (live: widget counts by type, area titles)",
+      "get_document_tree view=compact (live: sticky text under area root_id)",
+    ],
+    unverifiedReads: ["list_widgets (schema known; not required for board-level normalize)", "get_widget_by_id"],
+    declaredButUnusedWrites: ["create_*, update_*, delete_*, lock/unlock, tag, outline, invite tools (not on Ramirez allowlist)"],
+    notes: [
+      "Cursor account connector. No research-to-planning identifier convention known.",
+      "Ramirez normalizes board metadata; sticky content is evidence context, not identity.",
+    ],
   },
   figma: {
     system: "figma",
     connection: null,
     adapter: "INTERFACE_ONLY",
-    verifiedReads: [],
-    unverifiedReads: ["get_metadata", "get_design_context", "get_comments (IDE plugin only)"],
+    verifiedReads: [
+      "whoami (live: Bayer View seat)",
+      "create_session + get_metadata pages list (live: Product-Profiles Mfpvi8EkGRio9wuSXi5ZzS)",
+      "get_metadata node subtree + get_screenshot (live: Portfolio Main 2588:718438, Profile Main 250:554914)",
+      "get_comments (live: Product-Profiles)",
+    ],
+    unverifiedReads: ["get_design_context (available; not used for normalize)"],
     declaredButUnusedWrites: ["use_figma, create_new_file, upload_assets, send_code_to_figma, generate_* (IDE plugin)"],
-    notes: ["Figma is IDE-plugin only by repo policy; no agent connection."],
+    notes: [
+      "Figma is IDE-plugin only by repo policy; no agent MCP connection.",
+      "normalizeFigmaNode / parseFigmaUrl normalize chat-side reads; Ramirez never opens Figma itself.",
+      "No file titled Product Parentage Outline found; Aha parentage epics link Product-Profiles Portfolio (Products & Parentage).",
+    ],
   },
   azure_devops: {
     system: "azure_devops",

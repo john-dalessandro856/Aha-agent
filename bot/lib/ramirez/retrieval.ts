@@ -1,5 +1,6 @@
 import { inferAhaRecordType, normalizeAhaRecord } from "./adapters/aha";
 import { normalizeDpjWorkPackage } from "./adapters/dpj";
+import { normalizeMuralBoard, normalizeMuralSearchHit, overviewFromCanvas } from "./adapters/mural";
 import { assertReadTool } from "./capabilities";
 import type { RamirezConfig } from "./config";
 import { redact } from "./redact";
@@ -22,6 +23,13 @@ export interface PlanningAdapter {
   searchByIdentifier(identifier: string): Promise<Retrieval<CandidateHit[]>>;
   /** Finds records by title text for metadata comparison. */
   searchByTitle(text: string, scope?: { projectId?: string }): Promise<Retrieval<CandidateHit[]>>;
+}
+
+/** Read-only board/file evidence. Not used for Aha↔DPJ identity matching. */
+export interface EvidenceAdapter {
+  readonly system: "mural" | "figma";
+  getById(id: string): Promise<Retrieval<Artifact>>;
+  searchByTitle(text: string): Promise<Retrieval<CandidateHit[]>>;
 }
 
 /** Caches every retrieval for the run and logs why it was made. */
@@ -103,7 +111,11 @@ function errorText(res: McpCallResult): string {
 /** Every call passes the read allowlist twice: on the logical name and on the resolved server name. */
 class ReadOnlyConnection {
   private resolvedNames = new Map<string, string>();
-  constructor(private readonly mcp: McpClient, readonly system: "aha" | "dpj", readonly connection: string) {}
+  constructor(
+    private readonly mcp: McpClient,
+    readonly system: "aha" | "dpj" | "mural",
+    readonly connection: string,
+  ) {}
 
   async call(tool: string, args: Record<string, unknown>): Promise<McpCallResult> {
     assertReadTool(this.system, tool);
@@ -219,6 +231,45 @@ export function createDpjMcpAdapter(mcp: McpClient, config: RamirezConfig, now: 
       );
       const limit = config.metadataSearchLimit * 4;
       return res.value && res.value.length > limit ? { ...res, value: res.value.slice(0, limit), truncated: true } : res;
+    },
+  };
+}
+
+function muralSearchHits(p: unknown): unknown[] {
+  const o = p as Record<string, unknown> | undefined;
+  return Array.isArray(o?.murals) ? o.murals : [];
+}
+
+/** Mural evidence adapter. Title search only; board content is not an identity channel. */
+export function createMuralMcpAdapter(mcp: McpClient, now: () => string = () => new Date().toISOString()): EvidenceAdapter {
+  const conn = new ReadOnlyConnection(mcp, "mural", "mural");
+  return {
+    system: "mural",
+    async getById(id) {
+      const scope = `mural get_mural_info ${id}`;
+      const infoRes = await conn.call("get_mural_info", { mural_id: id });
+      if (infoRes.isError) {
+        const msg = errorText(infoRes);
+        return { state: classifyError(msg), scope, note: msg };
+      }
+      const info = payload(infoRes);
+      let overview;
+      const overviewRes = await conn.call("get_canvas_overview", { mural_id: id });
+      if (!overviewRes.isError) overview = overviewFromCanvas(payload(overviewRes));
+      return { state: "AVAILABLE", scope, value: normalizeMuralBoard(info, now(), overview) };
+    },
+    async searchByTitle(text) {
+      const scope = `mural search_murals "${text}"`;
+      const res = await conn.call("search_murals", { query: text, limit: 10 });
+      if (res.isError) {
+        const msg = errorText(res);
+        return { state: classifyError(msg), scope, note: msg };
+      }
+      const hits: CandidateHit[] = muralSearchHits(payload(res)).map((item) => {
+        const artifact = normalizeMuralSearchHit(item, now());
+        return { id: artifact.sourceId, recordType: "mural_board", artifact };
+      });
+      return { state: hits.length ? "AVAILABLE" : "NOT_FOUND_WITHIN_QUERIED_SCOPE", scope, value: hits };
     },
   };
 }
