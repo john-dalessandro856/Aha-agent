@@ -70,6 +70,13 @@ export type LinkKind =
   | "aha_description_dpj_url"
   | "aha_custom_field_dpj_url"
   | "aha_integration_field"
+  | "aha_description_figma_url"
+  | "aha_custom_field_figma_url"
+  | "figma_title_aha_ref"
+  | "aha_description_mural_url"
+  | "aha_custom_field_mural_url"
+  | "mural_title_aha_ref"
+  | "mural_description_figma_url"
   | "text_mention";
 
 export type CrossSystemLink = {
@@ -192,7 +199,16 @@ export type DiscrepancyKind =
   | "OWNERSHIP_CONFLICT"
   | "STATUS_CONFLICT"
   | "DATE_CONFLICT"
-  | "UNSUPPORTED_COMPLETION_CLAIM";
+  | "UNSUPPORTED_COMPLETION_CLAIM"
+  | "DESIGN_PLANNING_MISMATCH"
+  | "RESEARCH_ABSENT_FROM_PLANNING"
+  | "PLANNING_ABSENT_FROM_DESIGN"
+  | "STALE_DESIGN_LINK"
+  | "ORPHAN_DESIGN_EVIDENCE"
+  | "ORPHAN_RESEARCH_EVIDENCE"
+  | "INTRA_AHA_CONTRADICTION"
+  | "INTRA_AHA_DUPLICATE"
+  | "RESEARCH_DESIGN_MISMATCH";
 
 export type ConflictingValue = { artifact: string; field: string; value: string | null; provenance?: Provenance };
 
@@ -254,10 +270,34 @@ export type RetrievalLogEntry = {
   note?: string;
 };
 
+/** One Aha record that participates in more than one lifecycle hop. */
+export type LifecyclePath = {
+  ahaKey: string;
+  muralKey?: string;
+  figmaKey?: string;
+  muralRelationshipRef?: string;
+  figmaRelationshipRef?: string;
+  muralStatus?: RelationshipStatus;
+  figmaStatus?: RelationshipStatus;
+  explanation: string;
+};
+
 export type ReconciliationResult = {
   mutationMode: typeof MUTATION_MODE;
   statement: string;
-  scope: { aha: string[]; dpj: string[]; options: { expectDpjCounterpart: boolean; dpjProjectId: string | null } };
+  scope: {
+    aha: string[];
+    dpj: string[];
+    mural: string[];
+    figma: string[];
+    options: {
+      expectDpjCounterpart: boolean;
+      expectPlanningCounterpart: boolean;
+      expectDesignCounterpart: boolean;
+      dpjProjectId: string | null;
+      transition: "aha_dpj" | "mural_aha" | "figma_aha" | "lifecycle";
+    };
+  };
   systemsQueried: SystemId[];
   systemsNotQueried: Array<{ system: SystemId; reason: string }>;
   artifacts: Artifact[];
@@ -268,6 +308,7 @@ export type ReconciliationResult = {
   discrepancies: Discrepancy[];
   proposals: ProposedChange[];
   downstreamLinks: Array<{ source: string; targetSystem: SystemId; targetId?: string; url?: string; retrievalState: RetrievalState; note: string }>;
+  lifecyclePaths: LifecyclePath[];
   retrievalLog: RetrievalLogEntry[];
   limitations: string[];
   rulesApplied: Array<{ id: string; description: string }>;

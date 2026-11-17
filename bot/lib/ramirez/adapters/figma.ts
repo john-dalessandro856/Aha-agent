@@ -1,8 +1,11 @@
 // Normalizes Figma file/page/node metadata into a Ramirez Artifact.
 // Figma stays IDE-plugin only (no agent MCP connection). These helpers
 // normalize payloads observed from get_metadata / whoami-backed reads in chat.
+import type { RamirezConfig } from "../config";
+import { DEFAULT_CONFIG } from "../config";
+import { ahaRefFromTitle } from "../links";
 import { excerpt } from "../redact";
-import type { Artifact, Field, Provenance } from "../types";
+import type { Artifact, CrossSystemLink, Field, Provenance } from "../types";
 
 type Obj = Record<string, unknown>;
 const ADAPTER = "figma-ide-plugin@1";
@@ -27,6 +30,7 @@ export function normalizeFigmaNode(
   },
   retrievedAt: string,
   method = "get_metadata",
+  config: RamirezConfig = DEFAULT_CONFIG,
 ): Artifact {
   const sourceId = input.nodeId ? `${input.fileKey}:${input.nodeId}` : input.fileKey;
   const url = input.nodeId
@@ -52,6 +56,22 @@ export function normalizeFigmaNode(
   const field = <T>(name: string, value: T | undefined, shown?: string): Field<T> | undefined =>
     value === undefined ? undefined : { value, provenance: prov(name, shown) };
 
+  const links: CrossSystemLink[] = [];
+  if (config.conventions.figmaTitleAhaRef.enabled) {
+    const fromTitle = ahaRefFromTitle(title);
+    const fromFile = input.fileName ? ahaRefFromTitle(input.fileName) : undefined;
+    const ref = fromTitle ?? fromFile;
+    if (ref) {
+      links.push({
+        targetSystem: "aha",
+        targetId: ref,
+        kind: "figma_title_aha_ref",
+        claimsIdentity: true,
+        provenance: prov(fromTitle ? "name" : "fileName", ref),
+      });
+    }
+  }
+
   return {
     key: `figma:${sourceId}`,
     system: "figma",
@@ -67,7 +87,7 @@ export function normalizeFigmaNode(
     project: field("fileKey", { id: input.fileKey, name: input.fileName ?? input.fileKey }),
     ...(pageNames.length ? { tags: field("pages", pageNames) } : {}),
     externalIds: [{ scheme: "figma_file_key", value: input.fileKey, provenance: prov("fileKey", input.fileKey) }],
-    links: [],
+    links,
   };
 }
 

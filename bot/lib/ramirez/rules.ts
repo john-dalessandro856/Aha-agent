@@ -1,5 +1,6 @@
 // Reconciliation rules. Every assessment cites the rule ids it applied, so a
 // conclusion can be reproduced from its evidence and these definitions.
+import type { DiscrepancyKind, Severity } from "./types";
 
 export const SCORE = {
   migrationIdUnique: 95,
@@ -46,7 +47,71 @@ export const RULES = {
   "R-AL-009": "Any DIFFERENT on description, hierarchy, or mapped status makes alignment CONTRADICTORY; other differences make it PARTIALLY_ALIGNED.",
   "R-PROP-001": "A proposal requires a CONFIRMED relationship, a DIFFERENT field, and configured authority for that field and direction.",
   "R-PROP-002": "Proposals are never applied. A future apply requires approval naming the proposal ID and a re-read that matches baseStateFingerprint.",
+  "R-LF-001": "Aha description or named custom-field Figma URL is an identity claim when that convention is enabled; CONFIRMED only when the operator marked it verified.",
+  "R-LF-002": "Aha description or named custom-field Mural URL is an identity claim when that convention is enabled; CONFIRMED only when verified.",
+  "R-LF-003": "Aha reference in a Figma file/page/frame name is an identity claim when figmaTitleAhaRef is enabled; never from comments alone (R-ID-007).",
+  "R-LF-004": "Aha reference in a Mural board title is an identity claim when muralTitleAhaRef is enabled; sticky/area text is never identity.",
+  "R-LF-005": "DESIGN_PLANNING_MISMATCH: CONFIRMED or PROBABLE Aha↔Figma pair with material title/description/scope disagreement.",
+  "R-LF-006": "RESEARCH_ABSENT_FROM_PLANNING: mural theme/board expected in planning and no Aha candidate survived under expectation rules.",
+  "R-LF-007": "PLANNING_ABSENT_FROM_DESIGN: Aha in scope with expectDesignCounterpart and no matching Figma evidence.",
+  "R-LF-008": "STALE_DESIGN_LINK: Aha Figma URL resolves to a different fileKey than supplied design evidence.",
+  "R-LF-009": "ORPHAN_DESIGN_EVIDENCE / ORPHAN_RESEARCH_EVIDENCE: evidence supplied with expectation true and no planning candidate — NOT MISSING unless R-MISS-001 holds.",
+  "R-LF-010": "INTRA_AHA_CONTRADICTION / INTRA_AHA_DUPLICATE: two Aha records related under operator scope with conflicting or duplicate scope.",
+  "R-LF-011": "Lifecycle path: the same Aha record participates in independent mural↔Aha and Figma↔Aha assessments; each hop keeps its own status.",
+  "R-LF-012": "Figma URL on a mural description is an identity claim when muralDescriptionFigmaUrl is enabled; CONFIRMED only when verified.",
+  "R-LF-013": "RESEARCH_DESIGN_MISMATCH: CONFIRMED or PROBABLE mural↔Figma pair with material title/description disagreement.",
 } as const;
+
+/** Severity for Phase 4 lifecycle discrepancy kinds (rule-mediated). */
+export const LIFECYCLE_DISCREPANCY: Partial<
+  Record<DiscrepancyKind, { severity: Severity; impact: string; ruleRefs: string[] }>
+> = {
+  DESIGN_PLANNING_MISMATCH: {
+    severity: "HIGH",
+    impact: "Planning and design describe different scope; users may be built the wrong experience.",
+    ruleRefs: ["R-LF-005"],
+  },
+  RESEARCH_ABSENT_FROM_PLANNING: {
+    severity: "MEDIUM",
+    impact: "Research findings on the mural are not reflected in planning records.",
+    ruleRefs: ["R-LF-006"],
+  },
+  PLANNING_ABSENT_FROM_DESIGN: {
+    severity: "MEDIUM",
+    impact: "A planning record in scope has no matching design evidence.",
+    ruleRefs: ["R-LF-007"],
+  },
+  STALE_DESIGN_LINK: {
+    severity: "HIGH",
+    impact: "The Figma link on the planning record does not match the design evidence under review.",
+    ruleRefs: ["R-LF-008"],
+  },
+  ORPHAN_DESIGN_EVIDENCE: {
+    severity: "MEDIUM",
+    impact: "Design evidence was supplied with no planning counterpart in the queried scope.",
+    ruleRefs: ["R-LF-009"],
+  },
+  ORPHAN_RESEARCH_EVIDENCE: {
+    severity: "MEDIUM",
+    impact: "A mural was named with no planning counterpart in the queried scope.",
+    ruleRefs: ["R-LF-009"],
+  },
+  INTRA_AHA_CONTRADICTION: {
+    severity: "HIGH",
+    impact: "Related Aha records disagree on material scope or requirements.",
+    ruleRefs: ["R-LF-010"],
+  },
+  INTRA_AHA_DUPLICATE: {
+    severity: "MEDIUM",
+    impact: "Two Aha records likely describe the same work; risk of double funding or drift.",
+    ruleRefs: ["R-LF-010"],
+  },
+  RESEARCH_DESIGN_MISMATCH: {
+    severity: "HIGH",
+    impact: "Research board and design mockup disagree on material scope; users may see the wrong experience.",
+    ruleRefs: ["R-LF-013"],
+  },
+};
 
 export type RuleId = keyof typeof RULES;
 

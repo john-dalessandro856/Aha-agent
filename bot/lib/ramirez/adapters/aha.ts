@@ -1,6 +1,7 @@
 // Normalizes one Aha `read_records` result record. Field names follow the
 // shape observed in this repo's local traces; nothing else is assumed.
 import type { RamirezConfig } from "../config";
+import { parseFigmaUrls, parseMuralUrls } from "../links";
 import { excerpt } from "../redact";
 import { isAhaRef, stripMarkup } from "../text";
 import type { Artifact, CrossSystemLink, Field, Provenance } from "../types";
@@ -52,13 +53,65 @@ export function normalizeAhaRecord(raw: unknown, config: RamirezConfig, retrieve
     for (const m of description.matchAll(dpjUrl)) {
       links.push({ targetSystem: "dpj", targetId: m[1], url: m[0], kind: "aha_description_dpj_url", claimsIdentity: true, provenance: prov("description", m[0]) });
     }
+    if (config.conventions.ahaDescriptionFigmaUrl.enabled) {
+      for (const f of parseFigmaUrls(description)) {
+        links.push({
+          targetSystem: "figma",
+          targetId: f.nodeId ? `${f.fileKey}:${f.nodeId}` : f.fileKey,
+          url: f.url,
+          kind: "aha_description_figma_url",
+          claimsIdentity: true,
+          provenance: prov("description", f.url),
+        });
+      }
+    }
+    if (config.conventions.ahaDescriptionMuralUrl.enabled) {
+      for (const mural of parseMuralUrls(description)) {
+        links.push({
+          targetSystem: "mural",
+          targetId: mural.muralId,
+          url: mural.url,
+          kind: "aha_description_mural_url",
+          claimsIdentity: true,
+          provenance: prov("description", mural.url),
+        });
+      }
+    }
   }
   for (const cf of arr(r.custom_fields)) {
     const c = obj(cf);
     const value = str(c?.value);
     if (!c || !value) continue;
+    const fieldName = str(c.name) ?? "?";
+    const fieldPath = `custom_fields.${fieldName}`;
     for (const m of value.matchAll(dpjUrl)) {
-      links.push({ targetSystem: "dpj", targetId: m[1], url: m[0], kind: "aha_custom_field_dpj_url", claimsIdentity: true, provenance: prov(`custom_fields.${str(c.name) ?? "?"}`, m[0]) });
+      links.push({ targetSystem: "dpj", targetId: m[1], url: m[0], kind: "aha_custom_field_dpj_url", claimsIdentity: true, provenance: prov(fieldPath, m[0]) });
+    }
+    const figmaFields = config.conventions.ahaCustomFieldFigmaUrl;
+    if (figmaFields.enabled && (figmaFields.fieldNames.length === 0 || figmaFields.fieldNames.includes(fieldName))) {
+      for (const f of parseFigmaUrls(value)) {
+        links.push({
+          targetSystem: "figma",
+          targetId: f.nodeId ? `${f.fileKey}:${f.nodeId}` : f.fileKey,
+          url: f.url,
+          kind: "aha_custom_field_figma_url",
+          claimsIdentity: true,
+          provenance: prov(fieldPath, f.url),
+        });
+      }
+    }
+    const muralFields = config.conventions.ahaCustomFieldMuralUrl;
+    if (muralFields.enabled && (muralFields.fieldNames.length === 0 || muralFields.fieldNames.includes(fieldName))) {
+      for (const mural of parseMuralUrls(value)) {
+        links.push({
+          targetSystem: "mural",
+          targetId: mural.muralId,
+          url: mural.url,
+          kind: "aha_custom_field_mural_url",
+          claimsIdentity: true,
+          provenance: prov(fieldPath, mural.url),
+        });
+      }
     }
   }
 

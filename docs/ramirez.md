@@ -1,12 +1,30 @@
 # Ramirez
 
+Normative behavior: see [`ramirez-operating-plan.md`](ramirez-operating-plan.md).
+Phase 4 enablement checklist (Figma/Mural/Aha-consistency): [`ramirez-phase4-checklist.md`](ramirez-phase4-checklist.md).
+This file is observed capability status only.
+
+Ramirez is an individual tool: the person running the agent is the operator.
+They choose which identity conventions to trust (`verified` in config or
+per-run `withVerifiedConventions`). There is no separate organizational
+sign-off step.
+
 Ramirez reconciles selected Aha records with DPJ work packages. It reads,
 compares, and proposes. It does not write to Aha or DPJ.
 
-The reconciliation slice is still Aha ↔ DPJ only. Mural and Figma now have
-evidence normalizers (and Mural has a production MCP adapter) so named boards
-or Figma URLs can be read as evidence. They are not identity-matched to Aha
-or DPJ yet. Azure DevOps and GitHub remain not queried.
+Reconciliation tools:
+
+| Tool | Transition |
+| --- | --- |
+| `reconcile_planning` | Aha ↔ DPJ |
+| `reconcile_mural_planning` | Mural ↔ Aha (operator may `verifyConventions` per run) |
+| `reconcile_figma_planning` | Figma ↔ Aha (IDE-supplied evidence only; no Figma MCP) |
+| `reconcile_lifecycle` | Phase 5: independent mural↔Aha + Figma↔Aha hops, stitched Aha paths, optional mural↔Figma |
+
+Azure DevOps and GitHub remain not queried. Sticky/area text on murals is
+evidence context only — never identity. Figma screenshots are human
+context only — never identity. Lifecycle hops do not inherit each other's
+CONFIRMED status.
 
 ## Mode
 

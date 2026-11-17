@@ -2,13 +2,14 @@
 // the same provenance and link extraction as production. No credentials, no network.
 import { normalizeAhaRecord } from "./adapters/aha";
 import { normalizeDpjWorkPackage } from "./adapters/dpj";
-import { DEFAULT_CONFIG, withConfig, type RamirezConfig } from "./config";
-import type { CandidateHit, IdentifierChannel, PlanningAdapter, Retrieval } from "./retrieval";
+import { normalizeMuralBoard } from "./adapters/mural";
+import { DEFAULT_CONFIG, withConfig, type RamirezConfig, type RamirezConfigOverrides } from "./config";
+import type { CandidateHit, IdentifierChannel, MuralEvidenceAdapter, PlanningAdapter, Retrieval } from "./retrieval";
 import type { Artifact, RetrievalState } from "./types";
 
 export const NOW = "2026-11-16T12:00:00.000Z";
 
-export function config(overrides: Partial<RamirezConfig> = {}): RamirezConfig {
+export function config(overrides: RamirezConfigOverrides = {}): RamirezConfig {
   return withConfig(overrides);
 }
 
@@ -22,6 +23,7 @@ export type AhaOpts = {
   start?: string;
   due?: string;
   parentRef?: string;
+  customFields?: Array<{ name: string; value: string }>;
   integrations?: Array<{ service: string; id: string; url?: string }>;
 };
 
@@ -39,7 +41,7 @@ export function aha(o: AhaOpts, cfg: RamirezConfig = config()): Artifact {
     due_date: o.due ?? null,
     epic: o.parentRef ? { reference_num: o.parentRef, name: `Parent ${o.parentRef}` } : null,
     project: { id: "p1", name: "Velocity", reference_prefix: "VEL" },
-    custom_fields: [],
+    custom_fields: (o.customFields ?? []).map((c) => ({ name: c.name, value: c.value })),
     tags: [],
     integration_fields: (o.integrations ?? []).flatMap((i) => [
       { id: "1", name: "id", value: i.id, integration_id: "9", service_name: i.service },
@@ -132,5 +134,65 @@ export function fake(o: FakeOpts): FakeAdapter {
 
 export const DEFAULT_CHANNELS: IdentifierChannel[] = ["subject"];
 export const FULL_CHANNELS: IdentifierChannel[] = ["subject", "description"];
+
+export type MuralOpts = {
+  id: string;
+  title?: string;
+  description?: string;
+  memberUrl?: string;
+};
+
+export function mural(o: MuralOpts, cfg: RamirezConfig = config()): Artifact {
+  const [workspace, numeric] = o.id.split(".");
+  const memberUrl =
+    o.memberUrl ??
+    (workspace && numeric ? `https://app.mural.co/t/${workspace}/m/${workspace}/${numeric}` : undefined);
+  return normalizeMuralBoard(
+    {
+      id: o.id,
+      title: o.title ?? `Board ${o.id}`,
+      description: o.description ?? "",
+      ...(memberUrl ? { member_url: memberUrl } : {}),
+      workspace_id: workspace,
+    },
+    NOW,
+    undefined,
+    "get_mural_info",
+    cfg,
+  );
+}
+
+export type FakeMuralOpts = {
+  records?: Artifact[];
+  getByIdState?: Record<string, RetrievalState>;
+  stickyExcerpts?: Record<string, string>;
+};
+
+export type FakeMuralAdapter = MuralEvidenceAdapter & { calls: string[] };
+
+export function fakeMural(o: FakeMuralOpts = {}): FakeMuralAdapter {
+  const calls: string[] = [];
+  const byId = new Map((o.records ?? []).map((r) => [r.sourceId, r]));
+  return {
+    system: "mural",
+    calls,
+    async getById(id) {
+      calls.push(`get:${id}`);
+      const rec = byId.get(id);
+      if (rec) return { state: "AVAILABLE", value: rec, scope: `mural get ${id}` };
+      return { state: o.getByIdState?.[id] ?? "NOT_FOUND_WITHIN_QUERIED_SCOPE", scope: `mural get ${id}` };
+    },
+    async searchByTitle(text) {
+      calls.push(`title:${text}`);
+      return { state: "NOT_FOUND_WITHIN_QUERIED_SCOPE", scope: `mural title ${text}`, value: [] };
+    },
+    async getStickyExcerpts(id) {
+      calls.push(`sticky:${id}`);
+      const text = o.stickyExcerpts?.[id];
+      if (text) return { state: "AVAILABLE", value: text, scope: `mural tree ${id}` };
+      return { state: "NOT_FOUND_WITHIN_QUERIED_SCOPE", scope: `mural tree ${id}` };
+    },
+  };
+}
 
 export { DEFAULT_CONFIG };

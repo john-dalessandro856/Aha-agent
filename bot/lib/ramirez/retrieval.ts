@@ -2,8 +2,8 @@ import { inferAhaRecordType, normalizeAhaRecord } from "./adapters/aha";
 import { normalizeDpjWorkPackage } from "./adapters/dpj";
 import { normalizeMuralBoard, normalizeMuralSearchHit, overviewFromCanvas } from "./adapters/mural";
 import { assertReadTool } from "./capabilities";
-import type { RamirezConfig } from "./config";
-import { redact } from "./redact";
+import { DEFAULT_CONFIG, type RamirezConfig } from "./config";
+import { excerpt, redact } from "./redact";
 import type { Artifact, RetrievalLogEntry, RetrievalState, SystemId } from "./types";
 
 export type Retrieval<T> = { state: RetrievalState; value?: T; scope: string; truncated?: boolean; note?: string };
@@ -31,6 +31,11 @@ export interface EvidenceAdapter {
   getById(id: string): Promise<Retrieval<Artifact>>;
   searchByTitle(text: string): Promise<Retrieval<CandidateHit[]>>;
 }
+
+/** Mural adapter with optional sticky excerpts (context only, never identity). */
+export type MuralEvidenceAdapter = EvidenceAdapter & {
+  getStickyExcerpts?(id: string): Promise<Retrieval<string>>;
+};
 
 /** Caches every retrieval for the run and logs why it was made. */
 export class RetrievalSession {
@@ -240,8 +245,12 @@ function muralSearchHits(p: unknown): unknown[] {
   return Array.isArray(o?.murals) ? o.murals : [];
 }
 
-/** Mural evidence adapter. Title search only; board content is not an identity channel. */
-export function createMuralMcpAdapter(mcp: McpClient, now: () => string = () => new Date().toISOString()): EvidenceAdapter {
+/** Mural evidence adapter. Title search only for identity; stickies are optional context. */
+export function createMuralMcpAdapter(
+  mcp: McpClient,
+  config: RamirezConfig = DEFAULT_CONFIG,
+  now: () => string = () => new Date().toISOString(),
+): MuralEvidenceAdapter {
   const conn = new ReadOnlyConnection(mcp, "mural", "mural");
   return {
     system: "mural",
@@ -256,7 +265,7 @@ export function createMuralMcpAdapter(mcp: McpClient, now: () => string = () => 
       let overview;
       const overviewRes = await conn.call("get_canvas_overview", { mural_id: id });
       if (!overviewRes.isError) overview = overviewFromCanvas(payload(overviewRes));
-      return { state: "AVAILABLE", scope, value: normalizeMuralBoard(info, now(), overview) };
+      return { state: "AVAILABLE", scope, value: normalizeMuralBoard(info, now(), overview, "get_mural_info", config) };
     },
     async searchByTitle(text) {
       const scope = `mural search_murals "${text}"`;
@@ -266,10 +275,40 @@ export function createMuralMcpAdapter(mcp: McpClient, now: () => string = () => 
         return { state: classifyError(msg), scope, note: msg };
       }
       const hits: CandidateHit[] = muralSearchHits(payload(res)).map((item) => {
-        const artifact = normalizeMuralSearchHit(item, now());
+        const artifact = normalizeMuralSearchHit(item, now(), "search_murals", config);
         return { id: artifact.sourceId, recordType: "mural_board", artifact };
       });
       return { state: hits.length ? "AVAILABLE" : "NOT_FOUND_WITHIN_QUERIED_SCOPE", scope, value: hits };
     },
+    async getStickyExcerpts(id) {
+      const scope = `mural get_document_tree ${id}`;
+      const res = await conn.call("get_document_tree", { mural_id: id, view: "compact" });
+      if (res.isError) {
+        const msg = errorText(res);
+        return { state: classifyError(msg), scope, note: msg };
+      }
+      const text = stickyExcerptFromTree(payload(res));
+      return { state: "AVAILABLE", scope, value: text };
+    },
   };
+}
+
+function stickyExcerptFromTree(raw: unknown): string {
+  const chunks: string[] = [];
+  const walk = (node: unknown, depth: number) => {
+    if (chunks.length >= 24 || depth > 8) return;
+    if (Array.isArray(node)) {
+      for (const child of node) walk(child, depth);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const o = node as Record<string, unknown>;
+    const text = typeof o.text === "string" ? o.text.trim() : typeof o.title === "string" ? o.title.trim() : "";
+    if (text) chunks.push(text.slice(0, 120));
+    for (const key of ["children", "nodes", "widgets", "items"]) {
+      if (o[key] !== undefined) walk(o[key], depth + 1);
+    }
+  };
+  walk(raw, 0);
+  return excerpt(chunks.join(" | "), 800) ?? chunks.join(" | ").slice(0, 800);
 }

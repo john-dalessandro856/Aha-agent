@@ -1,8 +1,11 @@
 // Normalizes Mural board metadata and canvas overview into a Ramirez Artifact.
 // Field names follow shapes observed from the IDE Mural plugin in live reads
 // (get_mural_info, get_canvas_overview, search_murals).
+import type { RamirezConfig } from "../config";
+import { DEFAULT_CONFIG } from "../config";
+import { ahaRefFromTitle, parseFigmaUrls } from "../links";
 import { excerpt } from "../redact";
-import type { Artifact, Field, Provenance } from "../types";
+import type { Artifact, CrossSystemLink, Field, Provenance } from "../types";
 
 type Obj = Record<string, unknown>;
 const ADAPTER = "mural-mcp-read@1";
@@ -27,6 +30,7 @@ export function normalizeMuralBoard(
   retrievedAt: string,
   overview?: MuralOverview,
   method = "get_mural_info",
+  config: RamirezConfig = DEFAULT_CONFIG,
 ): Artifact {
   const info = obj(infoRaw) ?? {};
   const sourceId = str(info.id) ?? str(info.mural_id) ?? "unknown";
@@ -67,6 +71,33 @@ export function normalizeMuralBoard(
     areaTitles.length ? `areas=${areaTitles.length}: ${areaTitles.slice(0, 8).join("; ")}${areaTitles.length > 8 ? "; …" : ""}` : undefined,
   ].filter(Boolean);
 
+  const links: CrossSystemLink[] = [];
+  if (title && config.conventions.muralTitleAhaRef.enabled) {
+    const ref = ahaRefFromTitle(title);
+    if (ref) {
+      links.push({
+        targetSystem: "aha",
+        targetId: ref,
+        kind: "mural_title_aha_ref",
+        claimsIdentity: true,
+        provenance: prov("title", ref),
+      });
+    }
+  }
+  const figmaSource = [description, ...descriptionParts].filter(Boolean).join("\n");
+  if (config.conventions.muralDescriptionFigmaUrl.enabled && figmaSource) {
+    for (const f of parseFigmaUrls(figmaSource)) {
+      links.push({
+        targetSystem: "figma",
+        targetId: f.nodeId ? `${f.fileKey}:${f.nodeId}` : f.fileKey,
+        url: f.url,
+        kind: "mural_description_figma_url",
+        claimsIdentity: true,
+        provenance: prov("description", f.url),
+      });
+    }
+  }
+
   return {
     key: `mural:${sourceId}`,
     system: "mural",
@@ -83,12 +114,17 @@ export function normalizeMuralBoard(
     ...(updated ? { lastModified: field("last_updated", updated, updated) } : {}),
     ...(areaTitles.length ? { tags: field("areas", areaTitles) } : {}),
     externalIds: [],
-    links: [],
+    links,
   };
 }
 
 /** Normalizes one `search_murals` hit into a thin Artifact (title search only). */
-export function normalizeMuralSearchHit(raw: unknown, retrievedAt: string, method = "search_murals"): Artifact {
+export function normalizeMuralSearchHit(
+  raw: unknown,
+  retrievedAt: string,
+  method = "search_murals",
+  config: RamirezConfig = DEFAULT_CONFIG,
+): Artifact {
   const hit = obj(raw) ?? {};
   const sourceId = str(hit.mural_id) ?? "unknown";
   const title = str(hit.title);
@@ -108,6 +144,20 @@ export function normalizeMuralSearchHit(raw: unknown, retrievedAt: string, metho
   const field = <T>(name: string, value: T | undefined, shown?: string): Field<T> | undefined =>
     value === undefined ? undefined : { value, provenance: prov(name, shown) };
 
+  const links: CrossSystemLink[] = [];
+  if (title && config.conventions.muralTitleAhaRef.enabled) {
+    const ref = ahaRefFromTitle(title);
+    if (ref) {
+      links.push({
+        targetSystem: "aha",
+        targetId: ref,
+        kind: "mural_title_aha_ref",
+        claimsIdentity: true,
+        provenance: prov("title", ref),
+      });
+    }
+  }
+
   return {
     key: `mural:${sourceId}`,
     system: "mural",
@@ -123,7 +173,7 @@ export function normalizeMuralSearchHit(raw: unknown, retrievedAt: string, metho
       : {}),
     ...(updated ? { lastModified: field("updated_on", updated, updated) } : {}),
     externalIds: [],
-    links: [],
+    links,
   };
 }
 

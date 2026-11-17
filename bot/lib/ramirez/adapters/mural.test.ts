@@ -35,6 +35,37 @@ describe("normalizeMuralBoard", () => {
     assert.match(a.description?.value ?? "", /November 11/);
     assert.equal(a.url?.value, "https://app.mural.co/t/bayer1789/m/bayer1789/1771356982650");
     assert.equal(a.tags?.value.length, 2);
+    assert.equal(a.links.length, 0);
+  });
+
+  test("Aha ref in the board title is a mural_title_aha_ref identity claim", () => {
+    const a = normalizeMuralBoard(
+      {
+        id: "bayer1789.1",
+        title: "VEL-E-3599 discovery workshop",
+        member_url: "https://app.mural.co/t/bayer1789/m/bayer1789/1",
+      },
+      NOW,
+    );
+    const link = a.links.find((l) => l.kind === "mural_title_aha_ref");
+    assert.equal(link?.targetId, "VEL-E-3599");
+    assert.equal(link?.claimsIdentity, true);
+  });
+
+  test("Figma URL in the board description is a mural_description_figma_url claim", () => {
+    const a = normalizeMuralBoard(
+      {
+        id: "bayer1789.2",
+        title: "Workshop",
+        description: "Design https://www.figma.com/design/Mfpvi8EkGRio9wuSXi5ZzS/Product-Profiles?node-id=2588-718438",
+        member_url: "https://app.mural.co/t/bayer1789/m/bayer1789/2",
+      },
+      NOW,
+    );
+    const link = a.links.find((l) => l.kind === "mural_description_figma_url");
+    assert.equal(link?.targetSystem, "figma");
+    assert.equal(link?.targetId, "Mfpvi8EkGRio9wuSXi5ZzS:2588:718438");
+    assert.equal(link?.claimsIdentity, true);
   });
 });
 

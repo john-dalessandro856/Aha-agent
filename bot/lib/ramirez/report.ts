@@ -10,6 +10,8 @@ function label(key: string | undefined): string {
   const id = key.slice(split + 1);
   if (system === "aha") return `Aha ${id}`;
   if (system === "dpj") return `DPJ ${id}`;
+  if (system === "mural") return `Mural ${id}`;
+  if (system === "figma") return `Figma ${id}`;
   return `${system} ${id}`;
 }
 
@@ -26,7 +28,7 @@ function alignmentBlock(alignment: AlignmentAssessment, relationships: Relations
   const pair = rel ? `${label(rel.source)} ↔ ${label(rel.target)}` : alignment.relationshipRef;
   const lines = alignment.comparisons
     .filter((c) => c.result !== "EQUAL")
-    .map((c) => `- ${c.field}: ${c.result}. Aha ${JSON.stringify(c.sourceValue)}. DPJ ${JSON.stringify(c.targetValue)}.${c.note ? ` ${c.note}` : ""}`);
+    .map((c) => `- ${c.field}: ${c.result}. Source ${JSON.stringify(c.sourceValue)}. Target ${JSON.stringify(c.targetValue)}.${c.note ? ` ${c.note}` : ""}`);
   return [`${pair}: ${alignment.status}`, ...lines, alignment.explanation].join("\n");
 }
 
@@ -39,10 +41,31 @@ export function renderReport(result: ReconciliationResult): string {
   const requested = [
     result.scope.aha.length ? `Aha ${result.scope.aha.join(", ")}` : "",
     result.scope.dpj.length ? `DPJ ${result.scope.dpj.join(", ")}` : "",
+    result.scope.mural.length ? `Mural ${result.scope.mural.join(", ")}` : "",
+    result.scope.figma.length ? `Figma ${result.scope.figma.join(", ")}` : "",
   ]
     .filter(Boolean)
     .join("; ");
-  sections.push(["## Scope", `Records requested: ${requested || "none"}.`, `Systems queried: ${queried}.`, "Systems not queried:", notQueried].join("\n"));
+  const transition =
+    result.scope.options.transition === "mural_aha"
+      ? "Mural ↔ Aha"
+      : result.scope.options.transition === "figma_aha"
+        ? "Figma ↔ Aha"
+        : result.scope.options.transition === "lifecycle"
+          ? "Lifecycle (Mural ↔ Aha ↔ Figma)"
+          : "Aha ↔ DPJ";
+  sections.push(
+    ["## Scope", `Transition: ${transition}.`, `Records requested: ${requested || "none"}.`, `Systems queried: ${queried}.`, "Systems not queried:", notQueried].join("\n"),
+  );
+
+  if (result.lifecyclePaths.length) {
+    const lines = result.lifecyclePaths.map((p) => {
+      const mural = p.muralKey ? label(p.muralKey) : "(none)";
+      const figma = p.figmaKey ? label(p.figmaKey) : "(none)";
+      return `${mural} → ${label(p.ahaKey)} → ${figma}: mural ${p.muralStatus ?? "n/a"}, Figma ${p.figmaStatus ?? "n/a"}. ${p.explanation}`;
+    });
+    sections.push(["## Lifecycle paths", ...lines].join("\n"));
+  }
 
   if (result.relationships.length) {
     sections.push(["## Relationships", ...result.relationships.map(relationshipLine)].join("\n"));

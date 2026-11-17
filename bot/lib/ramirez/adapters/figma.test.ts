@@ -47,5 +47,21 @@ describe("normalizeFigmaNode", () => {
     assert.match(a.url?.value ?? "", /node-id=2588-718438/);
     assert.equal(a.externalIds[0]?.scheme, "figma_file_key");
     assert.ok(a.tags?.value.some((t) => /Portfolio Main/.test(t)));
+    assert.equal(a.links.length, 0);
+  });
+
+  test("Aha ref in the node name is a figma_title_aha_ref identity claim", () => {
+    const a = normalizeFigmaNode(
+      {
+        fileKey: "Mfpvi8EkGRio9wuSXi5ZzS",
+        fileName: "Product-Profiles",
+        nodeId: "2588:718438",
+        nodeName: "VEL-E-3599 — Portfolio Main",
+      },
+      NOW,
+    );
+    const link = a.links.find((l) => l.kind === "figma_title_aha_ref");
+    assert.equal(link?.targetId, "VEL-E-3599");
+    assert.equal(link?.claimsIdentity, true);
   });
 });

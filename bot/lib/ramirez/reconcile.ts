@@ -1,6 +1,6 @@
 // Aha ↔ DPJ reconciliation. Pure logic over normalized artifacts. It never
 // calls a connector directly: every retrieval goes through RetrievalSession.
-import type { RamirezConfig } from "./config";
+import { conventionVerified, type RamirezConfig } from "./config";
 import { excerpt } from "./redact";
 import type { PlanningAdapter, CandidateHit, RetrievalSession } from "./retrieval";
 import { describeRules, SCORE } from "./rules";
@@ -664,7 +664,19 @@ export async function reconcile(input: ReconcileInput, deps: ReconcileDeps): Pro
   return {
     mutationMode: MUTATION_MODE,
     statement: NO_CHANGES_STATEMENT,
-    scope: { aha: ahaRefs, dpj: dpjSeedIds, options: { expectDpjCounterpart: input.expectDpjCounterpart, dpjProjectId: input.dpjProjectId ?? null } },
+    scope: {
+      aha: ahaRefs,
+      dpj: dpjSeedIds,
+      mural: [],
+      figma: [],
+      options: {
+        expectDpjCounterpart: input.expectDpjCounterpart,
+        expectPlanningCounterpart: false,
+        expectDesignCounterpart: false,
+        dpjProjectId: input.dpjProjectId ?? null,
+        transition: "aha_dpj",
+      },
+    },
     systemsQueried,
     systemsNotQueried,
     artifacts: [...artifacts.values()],
@@ -675,6 +687,7 @@ export async function reconcile(input: ReconcileInput, deps: ReconcileDeps): Pro
     discrepancies,
     proposals,
     downstreamLinks,
+    lifecyclePaths: [],
     retrievalLog,
     limitations,
     rulesApplied: describeRules(ruleRefs),
@@ -693,9 +706,7 @@ function identityChannelsRequired(config: RamirezConfig): Array<"subject" | "des
 
 function backrefVerified(link: CrossSystemLink, config: RamirezConfig): boolean {
   if (link.kind === "dpj_custom_field_ref") return true;
-  if (link.kind === "dpj_subject_bracket_ref") return config.conventions.dpjSubjectBracketRef.verified;
-  if (link.kind === "dpj_description_aha_url") return config.conventions.dpjDescriptionAhaUrl.verified;
-  return false;
+  return conventionVerified(config, link.kind);
 }
 
 async function resolveHit(hit: CandidateHit, dpj: PlanningAdapter, session: RetrievalSession, artifacts: Map<string, Artifact>): Promise<Artifact | undefined> {

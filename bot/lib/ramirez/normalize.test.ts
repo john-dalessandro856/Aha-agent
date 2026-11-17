@@ -37,6 +37,41 @@ describe("Aha normalization", () => {
     // The adapter tag "aha-mcp-read_records@1" contains "@", so match an e-mail shape instead.
     assert.doesNotMatch(JSON.stringify(a), /[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
   });
+
+  test("a Figma URL in the Aha description is a figma identity claim", () => {
+    const a = aha({
+      ref: "VEL-E-5",
+      title: "T",
+      description: "Design https://www.figma.com/design/Mfpvi8EkGRio9wuSXi5ZzS/Product-Profiles?node-id=2588-718438",
+    });
+    const link = a.links.find((l) => l.targetSystem === "figma");
+    assert.equal(link?.kind, "aha_description_figma_url");
+    assert.equal(link?.targetId, "Mfpvi8EkGRio9wuSXi5ZzS:2588:718438");
+    assert.equal(link?.claimsIdentity, true);
+  });
+
+  test("a Mural member URL in the Aha description is a mural identity claim", () => {
+    const a = aha({
+      ref: "VEL-E-6",
+      title: "T",
+      description: "Workshop https://app.mural.co/t/bayer1789/m/bayer1789/1771356982650",
+    });
+    const link = a.links.find((l) => l.targetSystem === "mural");
+    assert.equal(link?.kind, "aha_description_mural_url");
+    assert.equal(link?.targetId, "bayer1789.1771356982650");
+    assert.equal(link?.claimsIdentity, true);
+  });
+
+  test("Figma URL in a custom field uses aha_custom_field_figma_url", () => {
+    const a = aha({
+      ref: "VEL-E-7",
+      title: "T",
+      customFields: [{ name: "Design link", value: "https://www.figma.com/design/Mfpvi8EkGRio9wuSXi5ZzS/X" }],
+    });
+    const link = a.links.find((l) => l.kind === "aha_custom_field_figma_url");
+    assert.equal(link?.targetId, "Mfpvi8EkGRio9wuSXi5ZzS");
+    assert.equal(link?.provenance.sourceField, "custom_fields.Design link");
+  });
 });
 
 describe("DPJ normalization", () => {
