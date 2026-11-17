@@ -643,6 +643,19 @@ Production reads happen only via IDE plugin evidence passed into
 Ramirez, not via an agent MCP connection. Do not invent a hosted Figma
 adapter for coverage. Figma is never an `ask` / agent MCP source.
 
+**Azure DevOps** is the same class of boundary: operator/IDE-supplied
+work-item evidence normalized into Artifacts. Do not invent a hosted
+ADO MCP or REST production adapter merely for connector coverage. Aha
+`vsts` integration links discovered during planning reads stay
+`NOT_RETRIEVED` until a user-scoped ADO reconciliation supplies
+matching evidence.
+
+**GitHub** is likewise an **interface / evidence-normalizer** boundary.
+Production reads are operator/IDE-supplied issue/PR/commit evidence
+only. Never bind GitHub into Ramirez agent MCP connections or the
+read-tool allowlist. GitHub is never an `ask` / agent MCP source for
+Ramirez.
+
 Prefer a narrow working vertical slice plus explicit capability gaps
 over broad speculative integrations.
 
@@ -695,11 +708,15 @@ user-scoped calls:
 
 - Figma planning/design alignment (IDE-plugin evidence only)
 - Mural research/planning traceability
-- Azure DevOps planning/engineering alignment
-- GitHub engineering/implementation traceability
+- Azure DevOps planning/engineering alignment (operator/IDE-supplied
+  evidence only; no ADO agent MCP)
+- GitHub engineering/implementation traceability (operator/IDE-supplied
+  evidence only; never bind GitHub into Ramirez agent MCP)
 
 Prefer explicit identifiers at every boundary. Do not query systems
-merely to populate lifecycle stages.
+merely to populate lifecycle stages. Enablement detail for ADO and
+GitHub lives in [`docs/ramirez-phase4-checklist.md`](ramirez-phase4-checklist.md)
+(Phase 4c / 4d).
 
 ## Phase 5 — Full lifecycle
 

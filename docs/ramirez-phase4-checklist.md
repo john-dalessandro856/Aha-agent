@@ -13,12 +13,19 @@ or field authority. There is no separate organizational sign-off step.
 
 - `MUTATION_MODE = PROPOSAL_ONLY`
 - Figma stays IDE-plugin evidence only (no agent MCP / `ask` source)
+- Azure DevOps stays operator/IDE-supplied evidence only (no agent MCP adapter)
+- GitHub stays operator/IDE-supplied evidence permanently (never bind into
+  Ramirez agent MCP / `READ_TOOL_ALLOWLIST`)
 - Default Aha ↔ DPJ runs still do not query Figma, Mural, ADO, or GitHub
 - Deterministic → metadata → lexical matching order
 - No invented connector semantics; DECLARED + SHAPE-OBSERVED minimum
 
 **Delivery order:** Phase 3 config/tool flags → 4a Mural↔Aha → 4b Figma↔Aha →
-Aha↔Aha mode (if the operator wants the engine) → Phase 5 Mural→Figma (later).
+**4c ADO↔Aha** → **4d GitHub↔Aha** → Aha↔Aha mode (if the operator wants the
+engine) → Phase 5 lifecycle stitch (Mural→Figma done; ADO/GitHub hops later).
+
+Observed status in [`ramirez.md`](ramirez.md) updates only when Sprint F/G
+implementation lands — not as part of this plan-doc pass.
 
 ---
 
@@ -104,6 +111,39 @@ from title similarity alone.
 | MF-2 | Apply design updates themselves in the IDE | Ramirez still proposes only |
 | MF-3 | Include Mural→Figma this round? | Out of Phase 4 |
 
+### 1E — Aha ↔ Azure DevOps (Phase 4c)
+
+| ID | Convention | Where it shows up | Operator meaning when verified | `claimsIdentity` | LinkKind / scheme (proposed) |
+| --- | --- | --- | --- | --- | --- |
+| ADO-ID-1 | Aha `vsts` integration field (id/url) | Already extracted as `aha_integration_field` | “This ADO work item is the engineering twin” | yes if verified | `aha_integration_field` (ADO target) |
+| ADO-ID-2 | `dev.azure.com` / `visualstudio.com` work-item URL on Aha description | Pasted URLs | “This URL is the engineering work item” | yes if verified | `aha_description_ado_url` |
+| ADO-ID-3 | Same URL/id in named Aha custom field | Operator names the field | “This field is the ADO link” | yes if verified | `aha_custom_field_ado_url` |
+| ADO-ID-4 | Aha reference in ADO work-item title | Supplied evidence `title` | “Titles carry the Aha ref on purpose” | yes if verified | `ado_title_aha_ref` |
+| ADO-ID-5 | Aha reference in ADO description / comments | Supplied `description` / note | Leave as context only | **no** (R-ID-007) | `text_mention` |
+
+**Defaults:** ADO-ID-1–4 `enabled: true, verified: false` (PROBABLE only)
+until the operator verifies them for the run. Never CONFIRM from title
+similarity alone. Aha↔DPJ runs still record `vsts` links as
+`NOT_RETRIEVED` and do not evaluate them.
+
+**Cardinality (operator choice per run or default):**
+
+- One primary ADO work item per Aha record, extras as evidence, or
+- Explicit 1:n pairs (deferred until a verified mapping rule exists)
+
+### 1F — Aha ↔ GitHub (Phase 4d)
+
+| ID | Convention | Where it shows up | Operator meaning when verified | `claimsIdentity` | LinkKind / scheme (proposed) |
+| --- | --- | --- | --- | --- | --- |
+| GH-ID-1 | GitHub issue/PR URL on Aha description | Pasted URLs | “This issue/PR implements this record” | yes if verified | `aha_description_github_url` |
+| GH-ID-2 | Same in named Aha custom field | Operator names the field | “This field is the GitHub link” | yes if verified | `aha_custom_field_github_url` |
+| GH-ID-3 | Aha reference in issue/PR title | Supplied evidence `title` | “Titles carry the Aha ref on purpose” | yes if verified | `github_title_aha_ref` |
+| GH-ID-4 | Aha reference in commit message | Supplied commit evidence | Too noisy — keep off identity | **no** by default | evidence excerpt only |
+| GH-ID-5 | Branch name containing Aha ref | Supplied branch metadata | Metadata unless operator verifies | metadata unless verified | config / metadata only |
+
+**Defaults:** GH-ID-1–3 `enabled: true, verified: false`; commits/branches
+never CONFIRM alone. GitHub is never opened by Ramirez MCP.
+
 ---
 
 ## 2. Tool schemas
@@ -123,6 +163,8 @@ from title similarity alone.
 | `reconcile_planning` | Aha ↔ DPJ (existing) | Agent MCP |
 | `reconcile_mural_planning` | Mural ↔ Aha (optional DPJ later) | Agent MCP (mural + aha) |
 | `reconcile_figma_planning` | Figma ↔ Aha | **Caller supplies Figma evidence**; agent reads Aha only |
+| `reconcile_ado_planning` | ADO ↔ Aha (Phase 4c) | **Caller supplies ADO evidence**; agent reads Aha only |
+| `reconcile_github_planning` | GitHub ↔ Aha (Phase 4d) | **Caller supplies GitHub evidence**; agent reads Aha only |
 | `reconcile_aha_consistency` | Aha ↔ Aha (if operator wants it) | Agent MCP (aha) |
 
 ### 2.2 `reconcile_mural_planning` (Phase 4a)
@@ -227,7 +269,126 @@ z.object({
 **Do not:** bind Figma MCP into agent connections; add Figma to `ask` sources;
 treat screenshot OCR as identity.
 
-### 2.4 `reconcile_aha_consistency` (only if A-ID-1 = engine)
+### 2.4 `reconcile_ado_planning` (Phase 4c)
+
+Azure DevOps is never opened by the agent. The **host chat** (or operator)
+supplies work-item evidence; Ramirez normalizes and pairs with Aha.
+
+```ts
+// bot/tools/reconcile_ado_planning.ts — proposed inputSchema
+const adoEvidence = z.object({
+  org: z.string().min(1).optional(),
+  project: z.string().min(1).optional(),
+  workItemId: z.string().min(1),
+  title: z.string().optional(),
+  state: z.string().optional(),
+  url: z.string().url().optional(),
+  description: z.string().max(4000).optional(),
+  note: z.string().max(2000).optional().describe("Short operator/IDE summary; not free-form authority"),
+  assignedTo: z.string().optional(),
+  iteration: z.string().optional(),
+  retrievedAt: z.string().datetime().optional(),
+});
+
+z.object({
+  ahaReferences: z
+    .array(z.string().regex(/^[A-Z][A-Z0-9]{1,11}-(?:[A-Z]{1,3}-)?\d+(?:-\d+)?$/))
+    .max(5)
+    .optional(),
+  ado: z.array(adoEvidence).min(1).max(5),
+  expectEngineeringCounterpart: z.boolean().default(true),
+  verifyConventions: z
+    .array(
+      z.enum([
+        "aha_integration_field",
+        "aha_description_ado_url",
+        "aha_custom_field_ado_url",
+        "ado_title_aha_ref",
+      ]),
+    )
+    .optional()
+    .describe("Operator: treat these link types as verified identity for this run"),
+})
+.refine(
+  (v) => (v.ahaReferences?.length ?? 0) > 0 || (v.ado?.length ?? 0) > 0,
+  "name at least one Aha reference or supply ADO evidence",
+);
+```
+
+**Execution:**
+
+1. Skill/instructions: operator or IDE gathers work-item metadata → fill `ado[]`
+2. Tool: `normalizeAdoWorkItem` each entry → Artifact `AVAILABLE`
+3. Aha adapter: `read_records` for refs; match `vsts` integration links
+   (ADO-ID-1) and extract ADO URLs from description / custom fields
+4. Match + align + report
+5. Limitations always include: “ADO was not queried by Ramirez; evidence was
+   supplied by the operator/IDE.”
+
+**Do not:** invent an Azure DevOps MCP/REST adapter for coverage; add ADO to
+`ask` sources; call ADO from default Aha↔DPJ reconciliation.
+
+### 2.5 `reconcile_github_planning` (Phase 4d)
+
+GitHub is never opened by Ramirez. Operator/IDE supplies issue/PR/commit
+evidence permanently — do not bind the GitHub IDE plugin into agent MCP.
+
+```ts
+// bot/tools/reconcile_github_planning.ts — proposed inputSchema
+const githubEvidence = z.object({
+  owner: z.string().min(1),
+  repo: z.string().min(1),
+  kind: z.enum(["issue", "pr", "commit"]),
+  number: z.number().int().positive().optional().describe("Issue or PR number"),
+  sha: z.string().min(7).optional().describe("Commit SHA when kind=commit"),
+  title: z.string().optional(),
+  state: z.string().optional(),
+  url: z.string().url().optional(),
+  body: z.string().max(4000).optional(),
+  note: z.string().max(2000).optional().describe("Short operator/IDE summary; not free-form authority"),
+  branch: z.string().optional(),
+  retrievedAt: z.string().datetime().optional(),
+});
+
+z.object({
+  ahaReferences: z
+    .array(z.string().regex(/^[A-Z][A-Z0-9]{1,11}-(?:[A-Z]{1,3}-)?\d+(?:-\d+)?$/))
+    .max(5)
+    .optional(),
+  github: z.array(githubEvidence).min(1).max(5),
+  expectImplementationCounterpart: z.boolean().default(true),
+  verifyConventions: z
+    .array(
+      z.enum([
+        "aha_description_github_url",
+        "aha_custom_field_github_url",
+        "github_title_aha_ref",
+      ]),
+    )
+    .optional()
+    .describe("Operator: treat these link types as verified identity for this run"),
+})
+.refine(
+  (v) => (v.ahaReferences?.length ?? 0) > 0 || (v.github?.length ?? 0) > 0,
+  "name at least one Aha reference or supply GitHub evidence",
+);
+```
+
+**Execution:**
+
+1. Skill/instructions: operator/IDE gathers issue/PR/commit metadata → fill `github[]`
+2. Tool: `normalizeGithubArtifact` each entry → Artifact `AVAILABLE`
+3. Aha adapter: `read_records`; extract github.com URLs from description /
+   custom fields
+4. Match + align + report
+5. Limitations always include: “GitHub was not queried by Ramirez; evidence was
+   supplied by the operator/IDE.”
+
+**Do not:** add GitHub to `READ_TOOL_ALLOWLIST` or agent MCP connections;
+treat commit-message / branch refs as identity by default; query GitHub
+from Aha↔DPJ or other Phase 4 paths.
+
+### 2.6 `reconcile_aha_consistency` (only if A-ID-1 = engine)
 
 ```ts
 z.object({
@@ -236,40 +397,51 @@ z.object({
 });
 ```
 
-Pairs only among supplied / discovered Aha artifacts. No DPJ/Mural/Figma.
+Pairs only among supplied / discovered Aha artifacts. No DPJ/Mural/Figma/ADO/GitHub.
 
-### 2.5 Config extensions (`bot/lib/ramirez/config.ts`)
+### 2.7 Config extensions (`bot/lib/ramirez/config.ts`)
 
 ```ts
 conventions: {
-  // existing dpj…
+  // existing dpj / figma / mural…
   ahaDescriptionFigmaUrl: { enabled: boolean; verified: boolean; source: string };
   ahaCustomFieldFigmaUrl: { enabled: boolean; verified: boolean; fieldNames: string[]; source: string };
   figmaTitleAhaRef: { enabled: boolean; verified: boolean; source: string };
   ahaDescriptionMuralUrl: { enabled: boolean; verified: boolean; source: string };
   ahaCustomFieldMuralUrl: { enabled: boolean; verified: boolean; fieldNames: string[]; source: string };
   muralTitleAhaRef: { enabled: boolean; verified: boolean; source: string };
+  // Phase 4c / 4d
+  ahaDescriptionAdoUrl: { enabled: boolean; verified: boolean; source: string };
+  ahaCustomFieldAdoUrl: { enabled: boolean; verified: boolean; fieldNames: string[]; source: string };
+  adoTitleAhaRef: { enabled: boolean; verified: boolean; source: string };
+  ahaDescriptionGithubUrl: { enabled: boolean; verified: boolean; source: string };
+  ahaCustomFieldGithubUrl: { enabled: boolean; verified: boolean; fieldNames: string[]; source: string };
+  githubTitleAhaRef: { enabled: boolean; verified: boolean; source: string };
 };
 ```
 
 Defaults: enabled mirrors today’s DPJ pattern; **verified: false** until
 the operator verifies that convention for the run (tool flag) or in their
-local config.
+local config. Existing `aha_integration_field` for `vsts` remains the
+ADO-ID-1 path (no separate convention flag required beyond verifying that
+link kind when supplied).
 
-### 2.6 Adapter / type work
+### 2.8 Adapter / type work
 
 | File | Change |
 | --- | --- |
-| `types.ts` `LinkKind` | Add mural/figma kinds from §1 |
-| `types.ts` `DiscrepancyKind` | Add kinds from §3 |
-| `adapters/aha.ts` | Extract figma.com + mural.co URLs; optional custom fields |
+| `types.ts` `LinkKind` | Add mural/figma kinds from §1; add `aha_description_ado_url`, `aha_custom_field_ado_url`, `ado_title_aha_ref`, `aha_description_github_url`, `aha_custom_field_github_url`, `github_title_aha_ref` |
+| `types.ts` `DiscrepancyKind` | Add kinds from §3 (design/research + engineering/implementation) |
+| `adapters/aha.ts` | Extract figma.com + mural.co + ADO + github.com URLs; optional custom fields; keep `vsts` → azure_devops |
 | `adapters/mural.ts` | Parse Aha refs from title; optional sticky excerpt helper |
 | `adapters/figma.ts` | Parse Aha refs from `nodeName` / `fileName` when convention enabled |
-| `retrieval.ts` | URL→mural id helper; keep Figma out of MCP adapters |
-| `reconcile-mural.ts` / `reconcile-figma.ts` (or modules under `lib/ramirez/`) | Pair builders; do not overload Aha↔DPJ `reconcile.ts` forever |
-| `rules.ts` | New rule ids `R-LF-*` (lifecycle) citing identity/alignment for design/research |
+| `adapters/ado.ts` (new) | `normalizeAdoWorkItem` / `parseAdoUrls` — interface only |
+| `adapters/github.ts` (new) | `normalizeGithubArtifact` / `parseGithubUrls` — interface only |
+| `retrieval.ts` | URL→mural id helper; keep Figma/ADO/GitHub out of MCP adapters |
+| `reconcile-mural.ts` / `reconcile-figma.ts` / `reconcile-ado.ts` / `reconcile-github.ts` | Pair builders; do not overload Aha↔DPJ `reconcile.ts` forever |
+| `rules.ts` | New rule ids `R-LF-*` (lifecycle) citing identity/alignment for design/research/engineering/implementation |
 | `report.ts` | Transition label in executive summary |
-| `capabilities.ts` | Notes only; no Figma allowlist entries |
+| `capabilities.ts` | Notes only; no Figma/ADO/GitHub allowlist entries |
 
 ---
 
@@ -281,13 +453,14 @@ Reuse existing kinds where the semantics match. Add only what Phase 4 needs.
 
 | Kind | Phase 4 use |
 | --- | --- |
-| `TITLE_CONFLICT` | Aha title vs Figma frame/page name; Aha vs mural title |
-| `DESCRIPTION_CONFLICT` | Aha description vs mural theme summary / Figma note |
+| `TITLE_CONFLICT` | Aha title vs Figma frame/page name; Aha vs mural title; Aha vs ADO/GitHub title |
+| `DESCRIPTION_CONFLICT` | Aha description vs mural theme summary / Figma note / ADO or GitHub body note |
 | `SCOPE_DRIFT` | Low lexical overlap after identity stripped |
-| `DUPLICATE_MAPPING` / `AMBIGUOUS_MAPPING` / `CONFLICTING_MAPPING` | Multiple design or board candidates |
+| `DUPLICATE_MAPPING` / `AMBIGUOUS_MAPPING` / `CONFLICTING_MAPPING` | Multiple design, board, ADO, or GitHub candidates |
 | `MISSING_LINK` | Expected counterpart with searchable channels + no candidate (strict) |
-| `POTENTIAL_BROKEN_LINK` | Explicit Figma/Mural URL on Aha that does not resolve |
-| `POTENTIAL_MIGRATION_OMISSION` | Prefer **not** for design/research; use new kinds below |
+| `POTENTIAL_BROKEN_LINK` | Explicit Figma/Mural/ADO/GitHub URL on Aha that does not match supplied evidence |
+| `POTENTIAL_MIGRATION_OMISSION` | Prefer **not** for design/research/engineering; use new kinds below |
+| `UNSUPPORTED_COMPLETION_CLAIM` | Aha/ADO marked done but open PR / no merge evidence (when GitHub evidence supports) |
 
 ### 3.2 New kinds (proposed)
 
@@ -301,6 +474,13 @@ Reuse existing kinds where the semantics match. Add only what Phase 4 needs.
 | `ORPHAN_RESEARCH_EVIDENCE` | Mural board with no Aha candidate and expectation true | MEDIUM | — |
 | `INTRA_AHA_CONTRADICTION` | Two Aha records CONFIRMED-related; conflicting scope/requirements | HIGH | Per A-ID-3 |
 | `INTRA_AHA_DUPLICATE` | Two Aha records likely same work (metadata) | MEDIUM | — |
+| `ENGINEERING_PLANNING_MISMATCH` | CONFIRMED/PROBABLE Aha↔ADO; title/scope/state disagree | HIGH if scope; MEDIUM if label-only | UNKNOWN until operator sets ADO vs Aha authority |
+| `PLANNING_ABSENT_FROM_ENGINEERING` | Aha in scope; expected ADO work item missing / not supplied | MEDIUM | N/A for ADO create |
+| `ORPHAN_ENGINEERING_EVIDENCE` | ADO evidence with no Aha candidate and expectation true | MEDIUM | — |
+| `STALE_ADO_LINK` | Aha ADO URL/id ≠ supplied work item | HIGH | Prefer explicit URL/integration id if verified |
+| `IMPLEMENTATION_PLANNING_MISMATCH` | CONFIRMED/PROBABLE Aha↔GitHub; material title/scope/state disagree | HIGH if scope; MEDIUM if label-only | UNKNOWN until operator sets GitHub vs Aha authority |
+| `PLANNING_ABSENT_FROM_IMPLEMENTATION` | Aha in scope; expected issue/PR missing / not supplied | MEDIUM | N/A for GitHub create |
+| `ORPHAN_IMPLEMENTATION_EVIDENCE` | GitHub evidence with no Aha candidate and expectation true | MEDIUM | — |
 
 Wire each kind to a **named rule** (`R-LF-001` …) in `rules.ts`. Severity is
 rule-mediated, not model-judged (operating plan).
@@ -311,15 +491,19 @@ rule-mediated, not model-judged (operating plan).
 | --- | --- | --- |
 | Mural ↔ Aha | title; optional description vs area/sticky excerpt aggregate | status, owner, dates, hierarchy (unless config says otherwise) |
 | Figma ↔ Aha | title (frame/page vs Aha name); description vs `note`/page list | Figma has no Aha status/owner — do not invent |
+| ADO ↔ Aha | title; optional description/note; state vs Aha status when operator supplies a status map | owner/hierarchy equivalence — do not invent |
+| GitHub ↔ Aha | title (issue/PR vs Aha name); optional body/note; state when comparable | commit/branch alone; inventing merge policy |
 | Aha ↔ Aha | title, description, owner, dates, status, hierarchy, type | release quirks per workspace conventions in instructions |
 
 ### 3.4 Proposal policy (Phase 4)
 
 | Proposal target | Allowed under PROPOSAL_ONLY? | Requires |
 | --- | --- | --- |
-| Aha field text from Figma/Mural | Propose only | CONFIRMED + authority rule |
+| Aha field text from Figma/Mural/ADO/GitHub | Propose only | CONFIRMED + authority rule |
 | DPJ from Aha (existing) | Propose only | Existing R-PROP-* |
 | Create Figma nodes / edit mural | **Never via Ramirez** | IDE plugin / humans |
+| Create/update ADO work items | **Never via Ramirez** | Humans / other tools |
+| Create/update GitHub issues/PRs | **Never via Ramirez** | Humans / other tools |
 | Add link field on Aha | Propose URL string only | Authority + CONFIRMED |
 
 Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONLY mode.`
@@ -362,7 +546,7 @@ Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONL
 - [ ] If engine: tool + sibling/linked candidate discovery + `INTRA_AHA_*` kinds
 - [ ] If skill-only: document that in instructions; no engine work
 
-### Sprint E — Phase 5 lifecycle
+### Sprint E — Phase 5 lifecycle (research ↔ design)
 
 - [x] `reconcile_lifecycle` tool + `ramirez-lifecycle` skill
 - [x] Independent mural↔Aha and Figma↔Aha hops merged with remapped ids
@@ -371,6 +555,32 @@ Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONL
 - [x] `RESEARCH_DESIGN_MISMATCH` for material mural↔Figma description drift
 - [x] Operator `verifyConventions` includes `mural_description_figma_url`
 - [x] Report section **Lifecycle paths**; tests for stitch + confirmed mural→Figma
+- [ ] Later: optional ADO/GitHub hops in lifecycle stitch (after Sprint F/G)
+
+### Sprint F — Phase 4c ADO ↔ Aha
+
+- [ ] `parseAdoUrls` + `normalizeAdoWorkItem` (`adapters/ado.ts` / `links.ts`)
+- [ ] Extend Aha extractors for description/custom-field ADO URLs; keep `vsts`
+- [ ] LinkKinds + conventions + `withVerifiedConventions` for ADO-ID-*
+- [ ] `reconcile_ado_planning` tool + `ramirez-ado-planning` skill
+- [ ] Pair engine (`reconcile-ado.ts`)
+- [ ] Emit `ENGINEERING_PLANNING_MISMATCH`, `PLANNING_ABSENT_FROM_ENGINEERING`,
+      `ORPHAN_ENGINEERING_EVIDENCE`, `STALE_ADO_LINK`
+- [ ] Tests with fixtures only — never mock an ADO MCP connection
+- [ ] Update `docs/ramirez.md` observed status only when this sprint ships
+
+### Sprint G — Phase 4d GitHub ↔ Aha
+
+- [ ] `parseGithubUrls` + `normalizeGithubArtifact` (`adapters/github.ts` / `links.ts`)
+- [ ] Extend Aha extractors for github.com issue/PR URLs
+- [ ] LinkKinds + conventions + `withVerifiedConventions` for GH-ID-*
+- [ ] `reconcile_github_planning` tool + `ramirez-github-planning` skill
+- [ ] Pair engine (`reconcile-github.ts`)
+- [ ] Emit `IMPLEMENTATION_PLANNING_MISMATCH`,
+      `PLANNING_ABSENT_FROM_IMPLEMENTATION`, `ORPHAN_IMPLEMENTATION_EVIDENCE`;
+      reuse `UNSUPPORTED_COMPLETION_CLAIM` when evidence supports
+- [ ] Tests with fixtures; assert GitHub never on `READ_TOOL_ALLOWLIST`
+- [ ] Update `docs/ramirez.md` observed status only when this sprint ships
 
 ---
 
@@ -383,15 +593,21 @@ Always keep: `No changes have been applied. Ramirez is operating in PROPOSAL_ONL
 | Figma evidence only; `expectDesignCounterpart` true; no Aha hit | `ORPHAN_DESIGN_EVIDENCE` / NOT_EVALUATED — not MISSING unless criteria met |
 | Mural title contains Aha ref; Aha reads OK | Convention path; score per verified |
 | Sticky text mentions Aha ref | Not identity (`R-ID-007`) |
-| Aha↔DPJ `reconcile_planning` unchanged | Still lists Figma/Mural as not queried |
+| Aha `vsts` id matches supplied ADO `workItemId` | Deterministic; PROBABLE until verified |
+| Aha ADO URL; supplied evidence different work-item id | CONTRADICTORY or `STALE_ADO_LINK` |
+| ADO evidence only; `expectEngineeringCounterpart` true; no Aha hit | `ORPHAN_ENGINEERING_EVIDENCE` / NOT_EVALUATED |
+| Aha description has GitHub PR URL; matching owner/repo/number | Deterministic; PROBABLE until verified |
+| Commit message mentions Aha ref | Not identity by default |
+| Aha↔DPJ `reconcile_planning` unchanged | Still lists Figma/Mural/ADO/GitHub as not queried |
 | Any write-shaped mural/figma tool name | `MutationBlockedError` / not called |
+| GitHub/ADO tool name on MCP allowlist | Must remain absent |
 | Proposal without authority | Discrepancy only, `proposals: []` |
 
 Core tests stay credential-free (mocked adapters / fixtures).
 
 ---
 
-## 6. Definition of done — Phase 4a / 4b
+## 6. Definition of done — Phase 4a / 4b / 4c / 4d
 
 Phase 4a **done** when:
 
@@ -408,8 +624,25 @@ Phase 4b **done** when:
 - Design/planning mismatch kinds emit with rule refs
 - Product-Profiles-style fixture passes offline
 
-Phase 4 is **not** done when ADO/GitHub remain stubs — those are separate
-Phase 4 bullets and can trail.
+Phase 4c **done** when:
+
+- Operator-supplied ADO evidence + Aha refs produce the same report shape
+- Ramirez never opens an Azure DevOps connector
+- Engineering/planning mismatch and stale-ADO kinds emit with rule refs
+- Fixture tests cover `vsts` + description URL paths offline
+- `docs/ramirez.md` updated for observed ADO interface status
+
+Phase 4d **done** when:
+
+- Operator-supplied GitHub evidence + Aha refs produce the same report shape
+- Ramirez never binds GitHub into agent MCP / allowlist
+- Implementation/planning mismatch kinds emit with rule refs
+- Commit/branch refs do not confirm identity by default
+- `docs/ramirez.md` updated for observed GitHub interface status
+
+Phase 4a/4b are implemented. Phase 4c/4d are planned here and trail until
+Sprint F/G land. Full Phase 4 is complete only when 4c and 4d DoD above are
+met (Aha↔Aha optional remains operator-gated).
 
 ---
 
@@ -418,7 +651,8 @@ Phase 4 bullets and can trail.
 The person running the agent sets these when they call the tool (or once in
 their config):
 
-1. Which of F-ID-1…F-ID-3 / M-ID-1…M-ID-3 are **enabled** and **verified** for this run.
+1. Which of F-ID-1…F-ID-3 / M-ID-1…M-ID-3 / ADO-ID-1…ADO-ID-4 / GH-ID-1…GH-ID-3
+   are **enabled** and **verified** for this run.
 2. Aha↔Figma cardinality: one primary node, or 1:n pairs.
 3. Field authority: on design vs planning conflicts, does Aha or Figma win
    for title / description (only needed if they want proposals).
@@ -426,6 +660,12 @@ their config):
    `RESEARCH_ABSENT_FROM_PLANNING`.
 5. Aha↔Aha: use the engine tool, or stick to `aha-analysis`.
 6. Whether Mural→Figma is in scope yet.
+7. Expect engineering counterpart (`expectEngineeringCounterpart`) and which
+   ADO conventions are verified; Aha vs ADO authority if proposals wanted.
+8. Expect implementation counterpart (`expectImplementationCounterpart`) and
+   which GitHub conventions are verified; Aha vs GitHub authority if proposals
+   wanted.
+9. Whether Phase 5 lifecycle stitch should include ADO/GitHub hops later.
 
 **Ship defaults:** extractors on, `verified: false`, conservative
 `expect*Counterpart` / `NOT_EVALUATED` / MEDIUM orphan findings — never
