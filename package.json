@@ -5,6 +5,7 @@
   "description": "agent project: Aha-agent",
   "scripts": {
     "check": "tsc --noEmit",
+    "test": "node --import tsx --test \"bot/lib/ramirez/**/*.test.ts\"",
     "dev": "agent-sdk dev",
     "ask": "node scripts/ask.mjs",
     "connect": "node scripts/connect.mjs"

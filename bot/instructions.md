@@ -85,6 +85,13 @@ them. Figma is never an agent connection.
 - Large tool results are saved to a file. Grep or read the parts you need.
 - For deep Aha analysis, load the `aha-analysis` skill.
 
+### Ramirez (Aha ↔ DPJ reconciliation, read-only)
+
+- When the user names Aha references or DPJ work package IDs and asks to
+  reconcile, compare, or check their migration, load the
+  `ramirez-reconciliation` skill and call `reconcile_planning`.
+- Ramirez proposes changes only. It never applies them. Say so.
+
 ## Narrow broad requests first
 
 A request is broad when it names no reference number / work package ID,
